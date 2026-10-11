@@ -2,7 +2,7 @@ FROM node:22-bookworm
 
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm ci && npm install -g @expo/ngrok
 COPY . .
 
 EXPOSE 8081
