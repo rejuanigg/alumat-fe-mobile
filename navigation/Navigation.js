@@ -37,6 +37,7 @@ export default function Navigation() {
       <Stack.Navigator>
         {user ? (
           <Stack.Screen name="Home" component={Home} options={{ title: 'Inicio' }} />
+          <Stack.Screen  />
         ) : (
           <>
             <Stack.Screen name="Login" component={Login} options={{ title: 'Iniciar sesión' }} />
