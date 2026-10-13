@@ -7,6 +7,8 @@ import { auth, isFirebaseConfigured } from '../src/config/firebaseConfig';
 import Login from '../screens/Login';
 import SignUp from '../screens/SignUp';
 import Home from '../screens/Home';
+import ProductsStack from './ProductsStack';
+import UserStack from './UserStack';
 
 const Stack = createStackNavigator();
 
@@ -29,19 +31,46 @@ export default function Navigation() {
   }
 
   if (user === undefined) {
-    return <View style={styles.center}><ActivityIndicator size="large" /></View>;
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
   }
 
   return (
     <NavigationContainer>
       <Stack.Navigator>
         {user ? (
-          <Stack.Screen name="Home" component={Home} options={{ title: 'Inicio' }} />
-          <Stack.Screen  />
+          <>
+            <Stack.Screen
+              name="Home"
+              component={Home}
+              options={{ title: 'Inicio' }}
+            />
+            <Stack.Screen
+              name="Products"
+              component={ProductsStack}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="User"
+              component={UserStack}
+              options={{ headerShown:false }}
+            />
+          </>
         ) : (
           <>
-            <Stack.Screen name="Login" component={Login} options={{ title: 'Iniciar sesión' }} />
-            <Stack.Screen name="SignUp" component={SignUp} options={{ title: 'Registro' }} />
+            <Stack.Screen
+              name="Login"
+              component={Login}
+              options={{ title: 'Iniciar sesión' }}
+            />
+            <Stack.Screen
+              name="SignUp"
+              component={SignUp}
+              options={{ title: 'Registro' }}
+            />
           </>
         )}
       </Stack.Navigator>

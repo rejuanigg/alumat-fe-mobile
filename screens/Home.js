@@ -19,6 +19,21 @@ export default function Home({ navigation }) {
     <View style={styles.container}>
       <Image source={require('../assets/logo.png')} style={styles.logo} />
       <Text style={styles.title}>Bienvenido a la aplicación</Text>
+
+      <TouchableOpacity
+        style={styles.button}
+        onPress={() => navigation.navigate('Products')}
+      >
+        <Text style={styles.buttonText}>Ver productos</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.button}
+        onPress={() => navigation.navigate('User')}
+      >
+        <Text style={styles.buttonText}>Mi Perfil</Text>
+      </TouchableOpacity>
+
       <TouchableOpacity style={styles.button} onPress={handleLogOut}>
         <Text style={styles.buttonText}>Cerrar sesión</Text>
       </TouchableOpacity>
