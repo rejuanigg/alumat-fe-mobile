@@ -18,7 +18,7 @@ import CustomCard from '../src/components/CustomCard';
 
 export default function Home({ navigation }) {
 
-  // Cerrar sesión
+  // CERRAR SESION
   const handleLogOut = async () => {
     try {
       await signOut(auth);
@@ -29,6 +29,11 @@ export default function Home({ navigation }) {
         'Hubo un problema al cerrar sesión.'
       );
     }
+  };
+
+  // IR A PRODUCTOS
+  const irAProductos = () => {
+    navigation.navigate('Products');
   };
 
   return (
@@ -70,6 +75,7 @@ export default function Home({ navigation }) {
               <Text style={styles.cardTitle}>
                 Mis boletas
               </Text>
+
               <FontAwesome
                 name="file-text-o"
                 size={24}
@@ -78,29 +84,38 @@ export default function Home({ navigation }) {
             </View>
 
             <Text style={styles.cardNumber}>2</Text>
+
             <Text style={styles.cardDescription}>
               Pendientes en gestión
             </Text>
           </CustomCard>
 
-          {/* PRODUCTOS */}
-          <CustomCard style={styles.card}>
-            <View style={styles.cardHeader}>
-              <Text style={styles.cardTitle}>
-                Productos
-              </Text>
-              <FontAwesome
-                name="cube"
-                size={24}
-                color="#0A72AB"
-              />
-            </View>
+          {/* PRODUCTOS - BOTON FUNCIONAL */}
+          <TouchableOpacity
+            style={styles.cardButton}
+            activeOpacity={0.8}
+            onPress={irAProductos}
+          >
+            <CustomCard style={styles.cardTouchable}>
+              <View style={styles.cardHeader}>
+                <Text style={styles.cardTitle}>
+                  Productos
+                </Text>
 
-            <Text style={styles.cardNumber}>3</Text>
-            <Text style={styles.cardDescription}>
-              En proceso de creación
-            </Text>
-          </CustomCard>
+                <FontAwesome
+                  name="cube"
+                  size={24}
+                  color="#0A72AB"
+                />
+              </View>
+
+              <Text style={styles.cardNumber}>3</Text>
+
+              <Text style={styles.cardDescription}>
+                En proceso de creación
+              </Text>
+            </CustomCard>
+          </TouchableOpacity>
 
           {/* PEDIDOS */}
           <CustomCard style={styles.card}>
@@ -108,6 +123,7 @@ export default function Home({ navigation }) {
               <Text style={styles.cardTitle}>
                 Pedidos
               </Text>
+
               <FontAwesome
                 name="shopping-cart"
                 size={24}
@@ -116,6 +132,7 @@ export default function Home({ navigation }) {
             </View>
 
             <Text style={styles.cardNumber}>1</Text>
+
             <Text style={styles.cardDescription}>
               En preparación
             </Text>
@@ -127,6 +144,7 @@ export default function Home({ navigation }) {
               <Text style={styles.cardTitle}>
                 Inventario
               </Text>
+
               <FontAwesome
                 name="archive"
                 size={24}
@@ -135,6 +153,7 @@ export default function Home({ navigation }) {
             </View>
 
             <Text style={styles.cardNumber}>4</Text>
+
             <Text style={styles.cardDescription}>
               Productos con stock bajo
             </Text>
@@ -206,13 +225,29 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
+    alignItems: 'stretch',
   },
 
+  // TARJETAS NORMALES
   card: {
     width: '48%',
     minHeight: 150,
     padding: 12,
     marginVertical: 7,
+  },
+
+  // CONTENEDOR DEL BOTON PRODUCTOS
+  cardButton: {
+    width: '48%',
+    marginVertical: 7,
+  },
+
+  // TARJETA PRODUCTOS
+  cardTouchable: {
+    width: '100%',
+    minHeight: 150,
+    padding: 12,
+    marginVertical: 0,
   },
 
   cardHeader: {
@@ -255,6 +290,7 @@ const styles = StyleSheet.create({
   },
 
 });
+
 
 
 
