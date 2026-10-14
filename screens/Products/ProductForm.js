@@ -1,11 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput, ScrollView } from 'react-native';
-import Navbar from '../../src/components/Navbar';
-import React from 'react';
-import { Text, View } from 'react-native';
+import { View, Text, TextInput, ScrollView, StyleSheet} from 'react-native';
 
 export default function ProductForm({ route, navigation }) {
-  // Verificamos si pasamos un producto por parámetro (Modo Edición)
   const product = route.params?.product;
   const isEditing = !!product;
 
