@@ -6,11 +6,11 @@ import UserView from '../screens/User/UserView';
 
 const Stack = createStackNavigator();
 
-export default function UserStack() {
-  return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="UserView" component={UserView} />
-      <Stack.Screen name="UserForm" component={UserForm} />
-    </Stack.Navigator>
-  );
+export default function ProductsStack() {
+    return (
+        <Stack.Navigator>
+            <Stack.Screen name="UserView" component={UserView} options={{ headerShown: false }} />
+            <Stack.Screen name="UserForm" component={UserForm} options={{ headerShown: false }} />
+        </Stack.Navigator>
+    );
 }
