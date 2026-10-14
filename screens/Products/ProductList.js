@@ -60,7 +60,7 @@ export default function ProductList({ navigation }) {
 const styles = StyleSheet.create({ 
   container: {
     flex: 1,
-    backgroundColor: '#F3F2E7', 
+    backgroundColor: '#E7E7D8', 
   },
   headerContainer: {
     paddingHorizontal: 20,

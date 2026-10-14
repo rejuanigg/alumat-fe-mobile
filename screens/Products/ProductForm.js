@@ -38,7 +38,6 @@ export default function ProductForm({ route, navigation }) {
       </View>
 
       <View style={styles.formContainer}>
-        {/* Aquí puedes reemplazar por tu <CustomInput> */}
         <Text style={styles.label}>Nombre del producto</Text>
         <TextInput 
           style={styles.input}
@@ -82,7 +81,7 @@ export default function ProductForm({ route, navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F3F2E7',
+    backgroundColor: '#E7E7D8',
   },
   headerContainer: {
     paddingHorizontal: 20,
