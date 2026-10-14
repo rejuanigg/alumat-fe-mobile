@@ -44,14 +44,27 @@ export default function Home({ navigation }) {
         barStyle="light-content"
       />
 
+      
       {/* ENCABEZADO AZUL */}
-      <View style={styles.header}>
-        <Image
-          source={require('../assets/isotipo.png')}
-          style={styles.logo}
-          resizeMode="contain"
-        />
-      </View>
+     <View style={styles.header}>
+  <Image
+    source={require('../assets/isotipo.png')}
+    style={styles.logo}
+    resizeMode="contain"
+  />
+
+  <TouchableOpacity
+    onPress={() => navigation.navigate('User')}
+    accessibilityLabel="Ver mi perfil"
+  >
+    <FontAwesome
+      name="user-circle"
+      size={28}
+      color="#FFFFFF"
+    />
+  </TouchableOpacity>
+</View>
+
 
       <ScrollView
         contentContainerStyle={styles.content}
@@ -190,11 +203,12 @@ const styles = StyleSheet.create({
   },
 
   header: {
-    height: 75,
-    backgroundColor: '#0A72AB',
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 22,
+  height: 75,
+  backgroundColor: '#0A72AB',
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  paddingHorizontal: 22,
   },
 
   logo: {
