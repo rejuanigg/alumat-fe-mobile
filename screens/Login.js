@@ -30,12 +30,12 @@ export default function Login({ navigation }) {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
 
-  #validar correo
+  // validar correo
   const validarCorreo = (correo) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo);
   };
 
-  // INICIAR SESION
+  //iniciar sesion
   const handleLogin = async () => {
 
     if (loading) return;
@@ -75,9 +75,9 @@ export default function Login({ navigation }) {
         password
       );
 
-      #Firebase gestiona la sesión.
-      #El observador de autenticación
-      #realiza el cambio de pantalla.
+      //Firebase gestiona la sesión.
+      //El observador de autenticación
+      //realiza el cambio de pantalla.
 
     } catch (error) {
 
@@ -116,7 +116,7 @@ export default function Login({ navigation }) {
     }
   };
 
-  #recuperar contraseña
+  //recuperar contraseña
   const recuperarPassword = async () => {
 
     const correo = email.trim().toLowerCase();
@@ -171,7 +171,7 @@ export default function Login({ navigation }) {
         keyboardShouldPersistTaps="handled"
       >
 
-        {#isotipo de alumat}
+        {/*isotipo de alumat*/}
 
         <Image
           source={require('../assets/isotipo.png')}
@@ -179,7 +179,7 @@ export default function Login({ navigation }) {
           resizeMode="contain"
         />
 
-        {#titulo}
+        {/*titulo*/}
 
         <Text style={styles.title}>
           Inicia Sesión
@@ -187,7 +187,7 @@ export default function Login({ navigation }) {
 
         <View style={styles.form}>
 
-          {/* CORREO ELECTRONICO */}
+          {/*coreo electronico*/}
 
           <Text style={styles.label}>
             Correo electrónico
@@ -218,7 +218,7 @@ export default function Login({ navigation }) {
             </Text>
           ) : null}
 
-          {#contraseña}
+          {/*contraseña*/}
 
           <Text style={styles.label}>
             Contraseña
@@ -248,7 +248,7 @@ export default function Login({ navigation }) {
 
             </View>
 
-            {#mostrar / ocultar contraseña}
+            {/* mostrar / ocultar contraseña */}
 
             <TouchableOpacity
               style={styles.eyeButton}
@@ -271,7 +271,7 @@ export default function Login({ navigation }) {
             </Text>
           ) : null}
 
-          {/* BOTON ENTRAR */}
+          {/* boton entrar */}
 
           <View style={styles.buttonContainer}>
 
@@ -282,7 +282,7 @@ export default function Login({ navigation }) {
 
           </View>
 
-          {#recuperar contraseña}
+          {/* recuperar contraseña */}
 
           <TouchableOpacity
             style={styles.forgotContainer}
@@ -295,7 +295,7 @@ export default function Login({ navigation }) {
 
           </TouchableOpacity>
 
-          {#registarse}
+          {/* registarse */}
 
           <TouchableOpacity
             style={styles.registerContainer}
@@ -319,7 +319,7 @@ export default function Login({ navigation }) {
   );
 }
 
-#estilos del login
+//estilos del login
 const styles = StyleSheet.create({
 
   screen: {
