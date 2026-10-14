@@ -2,7 +2,7 @@ import React from 'react';
 import { TextInput, StyleSheet, View } from 'react-native';
 import { theme } from '../theme/theme';
 
-export default function CustomInput({ placeholder, value, onChangeText, secureTextEntry, keyboardType }) {
+ export default function CustomInput({ placeholder, value, onChangeText, secureTextEntry, keyboardType }) {
   return (
     <View style={styles.container}>
       <TextInput

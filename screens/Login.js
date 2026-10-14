@@ -1,146 +1,426 @@
+
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Image } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
+  Image,
+  ScrollView,
+  StatusBar,
+} from 'react-native';
+
 import { FontAwesome } from '@expo/vector-icons';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+
+import {
+  signInWithEmailAndPassword,
+  sendPasswordResetEmail,
+} from 'firebase/auth';
+
 import { auth } from '../src/config/firebaseConfig';
+import CustomInput from '../src/components/CustomInput';
+import CustomButton from '../src/components/CustomButton';
 
 export default function Login({ navigation }) {
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({});
 
+  // validar correo
+  const validarCorreo = (correo) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo);
+  };
+
+  //iniciar sesion
   const handleLogin = async () => {
-    if (!email.trim() || !password) {
-      Alert.alert("Error", "Por favor ingrese ambos campos.");
+
+    if (loading) return;
+
+    const nuevosErrores = {};
+
+    if (!email.trim()) {
+      nuevosErrores.email = 'Este campo es obligatorio.';
+    }
+
+    if (!password) {
+      nuevosErrores.password = 'Este campo es obligatorio.';
+    }
+
+    if (Object.keys(nuevosErrores).length > 0) {
+      setErrors(nuevosErrores);
+      return;
+    }
+
+    const correo = email.trim().toLowerCase();
+
+    if (!validarCorreo(correo)) {
+      setErrors({
+        email: 'Correo electrónico con formato inválido.',
+      });
+      return;
+    }
+
+    setErrors({});
+    setLoading(true);
+
+    try {
+
+      await signInWithEmailAndPassword(
+        auth,
+        correo,
+        password
+      );
+
+      //Firebase gestiona la sesión.
+      //El observador de autenticación
+      //realiza el cambio de pantalla.
+
+    } catch (error) {
+
+      console.error('Error de login:', error.code);
+
+      let mensaje = 'No se pudo iniciar sesión.';
+
+      switch (error.code) {
+
+        case 'auth/invalid-credential':
+        case 'auth/wrong-password':
+        case 'auth/user-not-found':
+          mensaje = 'Correo o contraseña incorrectos.';
+          break;
+
+        case 'auth/invalid-email':
+          mensaje = 'Correo electrónico inválido.';
+          break;
+
+        case 'auth/network-request-failed':
+          mensaje = 'Error de conexión. Intentá nuevamente.';
+          break;
+
+        case 'auth/too-many-requests':
+          mensaje = 'Demasiados intentos. Intentá más tarde.';
+          break;
+
+        default:
+          mensaje = 'No se pudo iniciar sesión. Intentá nuevamente.';
+      }
+
+      setErrors({ password: mensaje });
+
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  //recuperar contraseña
+  const recuperarPassword = async () => {
+
+    const correo = email.trim().toLowerCase();
+
+    if (!correo) {
+      Alert.alert(
+        'Recuperar contraseña',
+        'Ingresá primero tu correo electrónico.'
+      );
+      return;
+    }
+
+    if (!validarCorreo(correo)) {
+      setErrors({
+        ...errors,
+        email: 'Correo electrónico con formato inválido.',
+      });
       return;
     }
 
     try {
-      await signInWithEmailAndPassword(auth, email.trim(), password);
-      Alert.alert("Login exitoso", "Has iniciado sesión correctamente.");
-      // El observador de Firebase cambia la pantalla al detectar la sesión.
+
+      await sendPasswordResetEmail(auth, correo);
+
+      Alert.alert(
+        'Recuperar contraseña',
+        'Si el correo está registrado, recibirás instrucciones para restablecer tu contraseña.'
+      );
+
     } catch (error) {
-      console.error('Error de inicio de sesión:', error.code, error.message);
-      let errorMessage = "Hubo un problema al iniciar sesión.";
-      switch (error.code) {
-        case 'auth/invalid-email':
-          errorMessage = "El formato del correo electrónico no es válido.";
-          break;
-        case 'auth/invalid-credential':
-        case 'auth/wrong-password':
-          errorMessage = "La contraseña es incorrecta.";
-          break;
-        case 'auth/user-not-found':
-          errorMessage = "No se encontró un usuario con este correo.";
-          break;
-        case 'auth/network-request-failed':
-          errorMessage = "Error de conexión, por favor intenta más tarde.";
-          break;
-        case 'auth/invalid-api-key':
-          errorMessage = "La clave API de Firebase no es válida. Revisa el archivo .env.";
-          break;
-      }
-      Alert.alert("Error", `${errorMessage}\n\nCódigo: ${error.code ?? 'desconocido'}`);
+
+      console.error('Error de recuperación:', error.code);
+
+      Alert.alert(
+        'Error',
+        'No se pudo procesar la solicitud. Intentá nuevamente.'
+      );
     }
   };
 
   return (
-    <View style={styles.container}>
-      <Image source={require('../assets/logo.png')} style={styles.logo} />
-      <Text style={styles.title}>Iniciar sesión</Text>
 
-      <Text style={styles.label}>Correo</Text>
-      <View style={styles.inputContainer}>
-        <FontAwesome name="envelope" size={20} color="#ccc" style={styles.icon} />
-        <TextInput
-          style={styles.input}
-          placeholder="Ingrese su correo"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
+    <View style={styles.screen}>
+
+      <StatusBar
+        backgroundColor="#006DA8"
+        barStyle="light-content"
+      />
+
+      <ScrollView
+        contentContainerStyle={styles.container}
+        keyboardShouldPersistTaps="handled"
+      >
+
+        {/*isotipo de alumat*/}
+
+        <Image
+          source={require('../assets/isotipo.png')}
+          style={styles.logo}
+          resizeMode="contain"
         />
-      </View>
 
-      <Text style={styles.label}>Contraseña</Text>
-      <View style={styles.inputContainer}>
-        <FontAwesome name="lock" size={20} color="#ccc" style={styles.icon} />
-        <TextInput
-          style={styles.input}
-          placeholder="Ingrese su contraseña"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry={!showPassword}
-        />
-        <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-          <FontAwesome name={showPassword ? "eye-slash" : "eye"} size={20} color="#ccc" />
-        </TouchableOpacity>
-      </View>
+        {/*titulo*/}
 
-      <TouchableOpacity style={styles.button} onPress={handleLogin}>
-        <Text style={styles.buttonText}>Ingresar</Text>
-      </TouchableOpacity>
+        <Text style={styles.title}>
+          Inicia Sesión
+        </Text>
 
-      <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
-        <Text style={styles.signUpText}>¿No tienes cuenta aún? Regístrate</Text>
-      </TouchableOpacity>
+        <View style={styles.form}>
+
+          {/*coreo electronico*/}
+
+          <Text style={styles.label}>
+            Correo electrónico
+          </Text>
+
+          <View
+            style={errors.email ? styles.inputError : null}
+          >
+
+            <CustomInput
+              placeholder="user@gmail.com"
+              value={email}
+              onChangeText={(texto) => {
+                setEmail(texto);
+                setErrors((prev) => ({
+                  ...prev,
+                  email: '',
+                }));
+              }}
+              keyboardType="email-address"
+            />
+
+          </View>
+
+          {errors.email ? (
+            <Text style={styles.errorText}>
+              {errors.email}
+            </Text>
+          ) : null}
+
+          {/*contraseña*/}
+
+          <Text style={styles.label}>
+            Contraseña
+          </Text>
+
+          <View style={styles.passwordRow}>
+
+            <View
+              style={[
+                styles.passwordInput,
+                errors.password ? styles.inputError : null,
+              ]}
+            >
+
+              <CustomInput
+                placeholder="********"
+                value={password}
+                onChangeText={(texto) => {
+                  setPassword(texto);
+                  setErrors((prev) => ({
+                    ...prev,
+                    password: '',
+                  }));
+                }}
+                secureTextEntry={!showPassword}
+              />
+
+            </View>
+
+            {/* mostrar / ocultar contraseña */}
+
+            <TouchableOpacity
+              style={styles.eyeButton}
+              onPress={() => setShowPassword(!showPassword)}
+            >
+
+              <FontAwesome
+                name={showPassword ? 'eye-slash' : 'eye'}
+                size={18}
+                color="#706F8A"
+              />
+
+            </TouchableOpacity>
+
+          </View>
+
+          {errors.password ? (
+            <Text style={styles.errorText}>
+              {errors.password}
+            </Text>
+          ) : null}
+
+          {/* boton entrar */}
+
+          <View style={styles.buttonContainer}>
+
+            <CustomButton
+              title={loading ? 'Ingresando...' : 'Entrar'}
+              onPress={handleLogin}
+            />
+
+          </View>
+
+          {/* recuperar contraseña */}
+
+          <TouchableOpacity
+            style={styles.forgotContainer}
+            onPress={recuperarPassword}
+          >
+
+            <Text style={styles.forgotText}>
+              Olvidé mi contraseña
+            </Text>
+
+          </TouchableOpacity>
+
+          {/* registarse */}
+
+          <TouchableOpacity
+            style={styles.registerContainer}
+            onPress={() => navigation.navigate('SignUp')}
+          >
+
+            <Text style={styles.registerText}>
+              ¿No tienes cuenta?{' '}
+              <Text style={styles.registerLink}>
+                creá una.
+              </Text>
+            </Text>
+
+          </TouchableOpacity>
+
+        </View>
+
+      </ScrollView>
+
     </View>
   );
 }
 
+//estilos del login
 const styles = StyleSheet.create({
-  container: {
+
+  screen: {
     flex: 1,
-    justifyContent: 'center',
+    backgroundColor: '#E7E7D8',
+  },
+
+  container: {
+    flexGrow: 1,
     alignItems: 'center',
-    padding: 20,
-    backgroundColor: '#fff',
+    justifyContent: 'center',
+    paddingHorizontal: 28,
+    paddingVertical: 30,
   },
+
   logo: {
-    width: 100,
+    width: 85,
     height: 100,
-    marginBottom: 20,
+    marginBottom: 12,
   },
+
   title: {
-    fontSize: 24,
+    fontSize: 17,
     fontWeight: 'bold',
-    marginBottom: 20,
+    color: '#4D5061',
+    marginBottom: 22,
   },
+
+  form: {
+    width: '100%',
+    maxWidth: 360,
+  },
+
   label: {
-    alignSelf: 'flex-start',
-    fontSize: 16,
-    fontWeight: 'bold',
+    fontSize: 13,
+    color: '#706F8A',
     marginTop: 10,
+    marginBottom: 2,
   },
-  inputContainer: {
+
+  passwordRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderBottomWidth: 1,
-    borderColor: '#b9770e',
-    marginBottom: 20,
-    width: '100%',
   },
-  icon: {
-    marginRight: 10,
-  },
-  input: {
+
+  passwordInput: {
     flex: 1,
-    height: 40,
   },
-  button: {
-    backgroundColor: '#922b21',
-    paddingVertical: 10,
-    paddingHorizontal: 40,
-    borderRadius: 5,
-    marginTop: 20,
+
+  eyeButton: {
+    position: 'absolute',
+    right: 12,
+    padding: 10,
   },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
+
+  inputError: {
+    borderColor: '#FF3333',
+    borderWidth: 1,
+    borderRadius: 8,
+  },
+
+  errorText: {
+    color: '#E53935',
+    fontSize: 12,
+    marginTop: 3,
+  },
+
+  buttonContainer: {
+    width: 145,
+    alignSelf: 'center',
+    marginTop: 25,
+  },
+
+  forgotContainer: {
+    marginTop: 18,
+    alignItems: 'flex-start',
+  },
+
+  forgotText: {
+    fontSize: 13,
+    color: '#706F8A',
+    textDecorationLine: 'underline',
+    fontWeight: '600',
+  },
+
+  registerContainer: {
+    marginTop: 22,
+    alignItems: 'flex-start',
+  },
+
+  registerText: {
+    fontSize: 13,
+    color: '#706F8A',
+  },
+
+  registerLink: {
     fontWeight: 'bold',
+    textDecorationLine: 'underline',
   },
-  signUpText: {
-    marginTop: 20,
-    color: '#007AFF',
-  },
+
 });
+
+
+
