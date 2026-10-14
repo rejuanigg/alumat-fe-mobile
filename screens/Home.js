@@ -203,11 +203,12 @@ const styles = StyleSheet.create({
   },
 
   header: {
-    backgroundColor: '#0A72AB',
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 22,
-    paddingVertical: 10,
+  height: 75,
+  backgroundColor: '#0A72AB',
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  paddingHorizontal: 22,
   },
 
   logo: {
