@@ -8,8 +8,8 @@ const Stack = createStackNavigator();
 export default function ProductsStack() {
     return (
         <Stack.Navigator>
-            <Stack.Screen name="UserView" component={UserView} options={{ title: 'Ver mi Perfil' }} />
-            <Stack.Screen name="UserForm" component={UserForm} options={{ title: 'Editar mi perfil' }} />
+            <Stack.Screen name="UserView" component={UserView} options={{ headerShown: false }} />
+            <Stack.Screen name="UserForm" component={UserForm} options={{ headerShown: false }} />
         </Stack.Navigator>
     );
 }
