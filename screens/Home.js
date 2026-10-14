@@ -8,9 +8,9 @@ import {
   Alert,
   Image,
   ScrollView,
-  StatusBar,
 } from 'react-native';
-
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar'
 import { FontAwesome } from '@expo/vector-icons';
 import { signOut } from 'firebase/auth';
 import { auth } from '../src/config/firebaseConfig';
@@ -36,16 +36,17 @@ export default function Home({ navigation }) {
     navigation.navigate('Products');
   };
 
+  const insets = useSafeAreaInsets();
+
   return (
-    <View style={styles.screen}>
+    <SafeAreaView style={styles.screen} edges={['left', 'right', 'bottom']}>
 
       <StatusBar
-        backgroundColor="#0A72AB"
-        barStyle="light-content"
+        style="light"
       />
 
       {/*encabezado azul*/}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
         <Image
           source={require('../assets/isotipo.png')}
           style={styles.logo}
@@ -178,7 +179,7 @@ export default function Home({ navigation }) {
         </TouchableOpacity>
 
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -190,11 +191,11 @@ const styles = StyleSheet.create({
   },
 
   header: {
-    height: 75,
     backgroundColor: '#0A72AB',
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 22,
+    paddingVertical: 10,
   },
 
   logo: {
