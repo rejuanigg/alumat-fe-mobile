@@ -8,9 +8,9 @@ import {
   Alert,
   Image,
   ScrollView,
-  StatusBar,
 } from 'react-native';
-
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar'
 import { FontAwesome } from '@expo/vector-icons';
 import { signOut } from 'firebase/auth';
 import { auth } from '../src/config/firebaseConfig';
@@ -18,7 +18,7 @@ import CustomCard from '../src/components/CustomCard';
 
 export default function Home({ navigation }) {
 
-  // CERRAR SESION
+  // cerrar sesion
   const handleLogOut = async () => {
     try {
       await signOut(auth);
@@ -31,17 +31,18 @@ export default function Home({ navigation }) {
     }
   };
 
-  // IR A PRODUCTOS
+  // Ir a productos
   const irAProductos = () => {
     navigation.navigate('Products');
   };
 
+  const insets = useSafeAreaInsets();
+
   return (
-    <View style={styles.screen}>
+    <SafeAreaView style={styles.screen} edges={['left', 'right', 'bottom']}>
 
       <StatusBar
-        backgroundColor="#0A72AB"
-        barStyle="light-content"
+        style="light"
       />
 
       
@@ -70,7 +71,7 @@ export default function Home({ navigation }) {
         contentContainerStyle={styles.content}
       >
 
-        {/* BIENVENIDA */}
+        {/*bienvenida*/}
         <Text style={styles.welcome}>
           ¡Hola!
         </Text>
@@ -79,10 +80,10 @@ export default function Home({ navigation }) {
           Aquí está el resumen de tu jornada actual
         </Text>
 
-        {/* TARJETAS */}
+        {/*tarjetas*/}
         <View style={styles.cardsContainer}>
 
-          {/* MIS BOLETAS */}
+          {/*mis boletas*/}
           <CustomCard style={styles.card}>
             <View style={styles.cardHeader}>
               <Text style={styles.cardTitle}>
@@ -103,7 +104,7 @@ export default function Home({ navigation }) {
             </Text>
           </CustomCard>
 
-          {/* PRODUCTOS - BOTON FUNCIONAL */}
+          {/*productos-boton funcional*/}
           <TouchableOpacity
             style={styles.cardButton}
             activeOpacity={0.8}
@@ -130,7 +131,7 @@ export default function Home({ navigation }) {
             </CustomCard>
           </TouchableOpacity>
 
-          {/* PEDIDOS */}
+          {/*pedidos*/}
           <CustomCard style={styles.card}>
             <View style={styles.cardHeader}>
               <Text style={styles.cardTitle}>
@@ -151,7 +152,7 @@ export default function Home({ navigation }) {
             </Text>
           </CustomCard>
 
-          {/* INVENTARIO */}
+          {/*inventario*/}
           <CustomCard style={styles.card}>
             <View style={styles.cardHeader}>
               <Text style={styles.cardTitle}>
@@ -174,7 +175,7 @@ export default function Home({ navigation }) {
 
         </View>
 
-        {/* CERRAR SESION */}
+        {/*cerrar sesion*/}
         <TouchableOpacity
           style={styles.logoutButton}
           onPress={handleLogOut}
@@ -191,7 +192,7 @@ export default function Home({ navigation }) {
         </TouchableOpacity>
 
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -203,12 +204,11 @@ const styles = StyleSheet.create({
   },
 
   header: {
-  height: 75,
-  backgroundColor: '#0A72AB',
-  flexDirection: 'row',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  paddingHorizontal: 22,
+    backgroundColor: '#0A72AB',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 22,
+    paddingVertical: 10,
   },
 
   logo: {
@@ -242,7 +242,7 @@ const styles = StyleSheet.create({
     alignItems: 'stretch',
   },
 
-  // TARJETAS NORMALES
+  //tarjetas normales
   card: {
     width: '48%',
     minHeight: 150,
@@ -250,13 +250,13 @@ const styles = StyleSheet.create({
     marginVertical: 7,
   },
 
-  // CONTENEDOR DEL BOTON PRODUCTOS
+  //contenedor del boton productos
   cardButton: {
     width: '48%',
     marginVertical: 7,
   },
 
-  // TARJETA PRODUCTOS
+  //tarjeta productos
   cardTouchable: {
     width: '100%',
     minHeight: 150,
