@@ -30,7 +30,7 @@ export default function Login({ navigation }) {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
 
-  // VALIDAR CORREO
+  #validar correo
   const validarCorreo = (correo) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo);
   };
@@ -75,9 +75,9 @@ export default function Login({ navigation }) {
         password
       );
 
-      // Firebase gestiona la sesión.
-      // El observador de autenticación
-      // realiza el cambio de pantalla.
+      #Firebase gestiona la sesión.
+      #El observador de autenticación
+      #realiza el cambio de pantalla.
 
     } catch (error) {
 
@@ -116,7 +116,7 @@ export default function Login({ navigation }) {
     }
   };
 
-  // RECUPERAR CONTRASEÑA
+  #recuperar contraseña
   const recuperarPassword = async () => {
 
     const correo = email.trim().toLowerCase();
@@ -171,7 +171,7 @@ export default function Login({ navigation }) {
         keyboardShouldPersistTaps="handled"
       >
 
-        {/* ISOTIPO DE ALUMAT */}
+        {#isotipo de alumat}
 
         <Image
           source={require('../assets/isotipo.png')}
@@ -179,7 +179,7 @@ export default function Login({ navigation }) {
           resizeMode="contain"
         />
 
-        {/* TITULO */}
+        {#titulo}
 
         <Text style={styles.title}>
           Inicia Sesión
@@ -218,7 +218,7 @@ export default function Login({ navigation }) {
             </Text>
           ) : null}
 
-          {/* CONTRASEÑA */}
+          {#contraseña}
 
           <Text style={styles.label}>
             Contraseña
@@ -248,7 +248,7 @@ export default function Login({ navigation }) {
 
             </View>
 
-            {/* MOSTRAR / OCULTAR CONTRASEÑA */}
+            {#mostrar / ocultar contraseña}
 
             <TouchableOpacity
               style={styles.eyeButton}
@@ -282,7 +282,7 @@ export default function Login({ navigation }) {
 
           </View>
 
-          {/* RECUPERAR CONTRASEÑA */}
+          {#recuperar contraseña}
 
           <TouchableOpacity
             style={styles.forgotContainer}
@@ -295,7 +295,7 @@ export default function Login({ navigation }) {
 
           </TouchableOpacity>
 
-          {/* REGISTRARSE */}
+          {#registarse}
 
           <TouchableOpacity
             style={styles.registerContainer}
@@ -319,7 +319,7 @@ export default function Login({ navigation }) {
   );
 }
 
-// ESTILOS DEL LOGIN
+#estilos del login
 const styles = StyleSheet.create({
 
   screen: {
