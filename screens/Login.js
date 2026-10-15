@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+
 import {
   View,
   Text,
@@ -23,21 +24,19 @@ import CustomInput from '../src/components/CustomInput';
 import CustomButton from '../src/components/CustomButton';
 
 export default function Login({ navigation }) {
-
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
 
-  // validar correo
+  // Validar correo
   const validarCorreo = (correo) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo);
   };
 
-  //iniciar sesion
+  // Iniciar sesión
   const handleLogin = async () => {
-
     if (loading) return;
 
     const nuevosErrores = {};
@@ -68,25 +67,20 @@ export default function Login({ navigation }) {
     setLoading(true);
 
     try {
-
       await signInWithEmailAndPassword(
         auth,
         correo,
         password
       );
 
-      //Firebase gestiona la sesión.
-      //El observador de autenticación
-      //realiza el cambio de pantalla.
+      // Firebase inicia la sesión si los datos están bien
 
     } catch (error) {
-
       console.error('Error de login:', error.code);
 
       let mensaje = 'No se pudo iniciar sesión.';
 
       switch (error.code) {
-
         case 'auth/invalid-credential':
         case 'auth/wrong-password':
         case 'auth/user-not-found':
@@ -116,9 +110,8 @@ export default function Login({ navigation }) {
     }
   };
 
-  //recuperar contraseña
+  // Recuperar contraseña
   const recuperarPassword = async () => {
-
     const correo = email.trim().toLowerCase();
 
     if (!correo) {
@@ -130,15 +123,14 @@ export default function Login({ navigation }) {
     }
 
     if (!validarCorreo(correo)) {
-      setErrors({
-        ...errors,
+      setErrors((prev) => ({
+        ...prev,
         email: 'Correo electrónico con formato inválido.',
-      });
+      }));
       return;
     }
 
     try {
-
       await sendPasswordResetEmail(auth, correo);
 
       Alert.alert(
@@ -147,7 +139,6 @@ export default function Login({ navigation }) {
       );
 
     } catch (error) {
-
       console.error('Error de recuperación:', error.code);
 
       Alert.alert(
@@ -158,9 +149,7 @@ export default function Login({ navigation }) {
   };
 
   return (
-
     <View style={styles.screen}>
-
       <StatusBar
         backgroundColor="#006DA8"
         barStyle="light-content"
@@ -171,24 +160,21 @@ export default function Login({ navigation }) {
         keyboardShouldPersistTaps="handled"
       >
 
-        {/*isotipo de alumat*/}
-
+        {/* Isotipo de ALUMAT */}
         <Image
           source={require('../assets/isotipo.png')}
           style={styles.logo}
           resizeMode="contain"
         />
 
-        {/*titulo*/}
-
+        {/* Título */}
         <Text style={styles.title}>
           Inicia Sesión
         </Text>
 
         <View style={styles.form}>
 
-          {/*coreo electronico*/}
-
+          {/* Correo electrónico */}
           <Text style={styles.label}>
             Correo electrónico
           </Text>
@@ -196,7 +182,6 @@ export default function Login({ navigation }) {
           <View
             style={errors.email ? styles.inputError : null}
           >
-
             <CustomInput
               placeholder="user@gmail.com"
               value={email}
@@ -209,7 +194,6 @@ export default function Login({ navigation }) {
               }}
               keyboardType="email-address"
             />
-
           </View>
 
           {errors.email ? (
@@ -218,21 +202,18 @@ export default function Login({ navigation }) {
             </Text>
           ) : null}
 
-          {/*contraseña*/}
-
+          {/* Contraseña */}
           <Text style={styles.label}>
             Contraseña
           </Text>
 
           <View style={styles.passwordRow}>
-
             <View
               style={[
                 styles.passwordInput,
                 errors.password ? styles.inputError : null,
               ]}
             >
-
               <CustomInput
                 placeholder="********"
                 value={password}
@@ -245,24 +226,19 @@ export default function Login({ navigation }) {
                 }}
                 secureTextEntry={!showPassword}
               />
-
             </View>
 
-            {/* mostrar / ocultar contraseña */}
-
+            {/* Mostrar u ocultar contraseña */}
             <TouchableOpacity
               style={styles.eyeButton}
               onPress={() => setShowPassword(!showPassword)}
             >
-
               <FontAwesome
                 name={showPassword ? 'eye-slash' : 'eye'}
                 size={18}
                 color="#706F8A"
               />
-
             </TouchableOpacity>
-
           </View>
 
           {errors.password ? (
@@ -271,57 +247,45 @@ export default function Login({ navigation }) {
             </Text>
           ) : null}
 
-          {/* boton entrar */}
-
+          {/* Botón entrar */}
           <View style={styles.buttonContainer}>
-
             <CustomButton
               title={loading ? 'Ingresando...' : 'Entrar'}
               onPress={handleLogin}
             />
-
           </View>
 
-          {/* recuperar contraseña */}
-
+          {/* Recuperar contraseña */}
           <TouchableOpacity
             style={styles.forgotContainer}
             onPress={recuperarPassword}
           >
-
             <Text style={styles.forgotText}>
               Olvidé mi contraseña
             </Text>
-
           </TouchableOpacity>
 
-          {/* registarse */}
-
+          {/* Registrarse */}
           <TouchableOpacity
             style={styles.registerContainer}
             onPress={() => navigation.navigate('SignUp')}
           >
-
             <Text style={styles.registerText}>
               ¿No tienes cuenta?{' '}
               <Text style={styles.registerLink}>
                 creá una.
               </Text>
             </Text>
-
           </TouchableOpacity>
 
         </View>
-
       </ScrollView>
-
     </View>
   );
 }
 
-//estilos del login
+// Estilos del Login
 const styles = StyleSheet.create({
-
   screen: {
     flex: 1,
     backgroundColor: '#E7E7D8',
@@ -419,8 +383,4 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textDecorationLine: 'underline',
   },
-
 });
-
-
-
