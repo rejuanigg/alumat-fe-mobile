@@ -1,4 +1,4 @@
-
+import Navbar from '../src/components/Navbar';
 import React, { useState } from 'react';
 import {
   View,
@@ -165,19 +165,12 @@ export default function Login({ navigation }) {
         backgroundColor="#006DA8"
         barStyle="light-content"
       />
+      <Navbar />
 
       <ScrollView
         contentContainerStyle={styles.container}
         keyboardShouldPersistTaps="handled"
       >
-
-        {/*isotipo de alumat*/}
-
-        <Image
-          source={require('../assets/isotipo.png')}
-          style={styles.logo}
-          resizeMode="contain"
-        />
 
         {/*titulo*/}
 

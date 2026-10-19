@@ -1,3 +1,4 @@
+import Navbar from '../src/components/Navbar';
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Image } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
@@ -71,9 +72,8 @@ export default function SignUp({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <Image source={require('../assets/logo.png')} style={styles.logo} />
+      <Navbar /> 
       <Text style={styles.title}>Regístrate</Text>
-
       <Text style={styles.label}>Nombre</Text>
       <View style={styles.inputContainer}>
         <FontAwesome name="user" size={20} color="#ccc" style={styles.icon} />

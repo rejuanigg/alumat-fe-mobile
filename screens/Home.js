@@ -1,5 +1,4 @@
-
-import React from 'react';
+import Navbar from '../src/components/Navbar';
 import {
   View,
   Text,
@@ -44,14 +43,7 @@ export default function Home({ navigation }) {
         barStyle="light-content"
       />
 
-      {/*encabezado azul*/}
-      <View style={styles.header}>
-        <Image
-          source={require('../assets/isotipo.png')}
-          style={styles.logo}
-          resizeMode="contain"
-        />
-      </View>
+      <Navbar />
 
       <ScrollView
         contentContainerStyle={styles.content}
