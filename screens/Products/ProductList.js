@@ -1,3 +1,4 @@
+import Navbar from '../../src/components/Navbar';
 import React from 'react';
 import { Text, View , FlatList, TouchableOpacity, StyleSheet } from 'react-native';
 
@@ -7,25 +8,15 @@ const mockProducts = [
 ];
 
 export default function ProductList({ navigation }) {
-  const renderItem = ({ item }) => (
-    <View style={styles.card}>
-      <View style={styles.imagePlaceholder} />
-      <View style={styles.cardContent}>
-        <Text style={styles.productName}>{item.name}</Text>
-        <Text style={styles.productCategory}>Categoría: {item.category}</Text>
-        <View style={styles.cardActions}>
-          <View style={styles.stockBadge}>
-            <Text style={styles.stockText}>{item.stock ? 'EN STOCK' : 'SIN STOCK'}</Text>
-          </View>
-          <TouchableOpacity 
-            style={styles.editButton}
-            onPress={() => navigation.navigate('ProductForm', { product: item })}
-          >
-            <Text style={styles.editButtonText}>Editar {'>'}</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+  return (
+    <View style={{ flex: 1 }}> 
+     <Navbar /> 
+      <View style={{ padding: 16 }}>
+      <Text>TODO: listado de productos</Text>
+      <Button title="Nuevo producto" onPress={() => navigation.navigate('ProductForm')} />
+      <Button title="Ver detalle" onPress={() => navigation.navigate('ProductDetail')} />
     </View>
+  </View>
   );
 
   return (

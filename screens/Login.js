@@ -1,4 +1,4 @@
-
+import Navbar from '../src/components/Navbar';
 import React, { useState } from 'react';
 
 import {
@@ -154,6 +154,7 @@ export default function Login({ navigation }) {
         backgroundColor="#006DA8"
         barStyle="light-content"
       />
+      <Navbar />
 
       <ScrollView
         contentContainerStyle={styles.container}
