@@ -9,11 +9,12 @@ import {
   Image,
   ScrollView,
   ActivityIndicator,
-  StatusBar,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
 
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
 import { FontAwesome } from '@expo/vector-icons';
 import { auth } from '../src/config/firebaseConfig';
 import {
@@ -22,6 +23,7 @@ import {
 } from 'firebase/auth';
 
 export default function SignUp({ navigation }) {
+  const insets = useSafeAreaInsets();
 
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -35,7 +37,6 @@ export default function SignUp({ navigation }) {
 
   // REGISTRAR USUARIO EN FIREBASE
   const handleSignUp = async () => {
-
     if (loading) return;
 
     if (
@@ -77,15 +78,10 @@ export default function SignUp({ navigation }) {
         displayName: `${firstName.trim()} ${lastName.trim()}`,
       });
 
-      Alert.alert(
-        'Registro exitoso',
-        'Tu cuenta fue creada correctamente.'
-      );
+      Alert.alert('Registro exitoso', 'Tu cuenta fue creada correctamente.');
 
       // Firebase detecta la sesión y muestra Home.
-
     } catch (error) {
-
       let mensaje = 'No se pudo completar el registro.';
 
       switch (error.code) {
@@ -111,165 +107,159 @@ export default function SignUp({ navigation }) {
       }
 
       Alert.alert('Error', mensaje);
-
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <StatusBar
-        backgroundColor="#0A72AB"
-        barStyle="light-content"
-      />
+    <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
+      <StatusBar style="light" />
 
-      {/* BARRA SUPERIOR */}
-      <View style={styles.header} />
+      {/* BARRA SUPERIOR: cubre la barra de estado */}
+      <View style={[styles.header, { height: insets.top + 10 }]} />
 
-      <ScrollView
-        contentContainerStyle={styles.content}
-        keyboardShouldPersistTaps="handled"
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-
-        {/* LOGO */}
-        <Image
-          source={require('../assets/isotipo.png')}
-          style={styles.logo}
-          resizeMode="contain"
-        />
-
-        <Text style={styles.title}>Registrarse</Text>
-
-        {/* NOMBRE */}
-        <Text style={styles.label}>Nombre</Text>
-
-        <TextInput
-          style={styles.input}
-          placeholder="Ingrese su nombre"
-          placeholderTextColor="#929292"
-          value={firstName}
-          onChangeText={setFirstName}
-          autoCapitalize="words"
-        />
-
-        {/* APELLIDO */}
-        <Text style={styles.label}>Apellido</Text>
-
-        <TextInput
-          style={styles.input}
-          placeholder="Ingrese su apellido"
-          placeholderTextColor="#929292"
-          value={lastName}
-          onChangeText={setLastName}
-          autoCapitalize="words"
-        />
-
-        {/* CORREO */}
-        <Text style={styles.label}>Correo electrónico</Text>
-
-        <TextInput
-          style={styles.input}
-          placeholder="usuario@gmail.com"
-          placeholderTextColor="#929292"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
-          autoCorrect={false}
-        />
-
-        {/* CONTRASEÑA */}
-        <Text style={styles.label}>Contraseña</Text>
-
-        <View style={styles.passwordContainer}>
-          <TextInput
-            style={styles.passwordInput}
-            placeholder="Ingrese su contraseña"
-            placeholderTextColor="#929292"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry={!showPassword}
+        <ScrollView
+          contentContainerStyle={styles.content}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* LOGO */}
+          <Image
+            source={require('../assets/isotipo.png')}
+            style={styles.logo}
+            resizeMode="contain"
           />
 
-          <TouchableOpacity
-            onPress={() => setShowPassword(!showPassword)}
-          >
-            <FontAwesome
-              name={showPassword ? 'eye-slash' : 'eye'}
-              size={18}
-              color="#706F8A"
-            />
-          </TouchableOpacity>
-        </View>
+          <Text style={styles.title}>Registrarse</Text>
 
-        {/* CONFIRMAR CONTRASEÑA */}
-        <Text style={styles.label}>Confirmar contraseña</Text>
+          {/* NOMBRE */}
+          <Text style={styles.label}>Nombre</Text>
 
-        <View style={styles.passwordContainer}>
           <TextInput
-            style={styles.passwordInput}
-            placeholder="Confirme su contraseña"
+            style={styles.input}
+            placeholder="Ingrese su nombre"
             placeholderTextColor="#929292"
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
-            secureTextEntry={!showConfirmPassword}
+            value={firstName}
+            onChangeText={setFirstName}
+            autoCapitalize="words"
           />
 
-          <TouchableOpacity
-            onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-          >
-            <FontAwesome
-              name={showConfirmPassword ? 'eye-slash' : 'eye'}
-              size={18}
-              color="#706F8A"
+          {/* APELLIDO */}
+          <Text style={styles.label}>Apellido</Text>
+
+          <TextInput
+            style={styles.input}
+            placeholder="Ingrese su apellido"
+            placeholderTextColor="#929292"
+            value={lastName}
+            onChangeText={setLastName}
+            autoCapitalize="words"
+          />
+
+          {/* CORREO */}
+          <Text style={styles.label}>Correo electrónico</Text>
+
+          <TextInput
+            style={styles.input}
+            placeholder="usuario@gmail.com"
+            placeholderTextColor="#929292"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+
+          {/* CONTRASEÑA */}
+          <Text style={styles.label}>Contraseña</Text>
+
+          <View style={styles.passwordContainer}>
+            <TextInput
+              style={styles.passwordInput}
+              placeholder="Ingrese su contraseña"
+              placeholderTextColor="#929292"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry={!showPassword}
             />
+
+            <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+              <FontAwesome
+                name={showPassword ? 'eye-slash' : 'eye'}
+                size={18}
+                color="#706F8A"
+              />
+            </TouchableOpacity>
+          </View>
+
+          {/* CONFIRMAR CONTRASEÑA */}
+          <Text style={styles.label}>Confirmar contraseña</Text>
+
+          <View style={styles.passwordContainer}>
+            <TextInput
+              style={styles.passwordInput}
+              placeholder="Confirme su contraseña"
+              placeholderTextColor="#929292"
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              secureTextEntry={!showConfirmPassword}
+            />
+
+            <TouchableOpacity
+              onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+            >
+              <FontAwesome
+                name={showConfirmPassword ? 'eye-slash' : 'eye'}
+                size={18}
+                color="#706F8A"
+              />
+            </TouchableOpacity>
+          </View>
+
+          {/* BOTÓN REGISTRARSE */}
+          <TouchableOpacity
+            style={styles.button}
+            onPress={handleSignUp}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <Text style={styles.buttonText}>Registrarse</Text>
+            )}
           </TouchableOpacity>
-        </View>
 
-        {/* BOTÓN REGISTRARSE */}
-        <TouchableOpacity
-          style={styles.button}
-          onPress={handleSignUp}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator color="#FFFFFF" />
-          ) : (
-            <Text style={styles.buttonText}>Registrarse</Text>
-          )}
-        </TouchableOpacity>
-
-        {/* IR A LOGIN */}
-        <TouchableOpacity
-          onPress={() => navigation.navigate('Login')}
-          style={styles.loginLink}
-        >
-          <Text style={styles.loginText}>
-            ¿Ya tienes una cuenta?{' '}
-            <Text style={styles.loginHighlight}>
-              Inicia sesión
+          {/* IR A LOGIN */}
+          <TouchableOpacity
+            onPress={() => navigation.navigate('Login')}
+            style={styles.loginLink}
+          >
+            <Text style={styles.loginText}>
+              ¿Ya tienes una cuenta?{' '}
+              <Text style={styles.loginHighlight}>Inicia sesión</Text>
             </Text>
-          </Text>
-        </TouchableOpacity>
-
-      </ScrollView>
-    </KeyboardAvoidingView>
+          </TouchableOpacity>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-
   container: {
     flex: 1,
     backgroundColor: '#E7E7D8',
   },
 
+  flex: {
+    flex: 1,
+  },
+
   header: {
-    height: 25,
     backgroundColor: '#0A72AB',
   },
 
@@ -365,5 +355,4 @@ const styles = StyleSheet.create({
     color: '#0A72AB',
     fontWeight: 'bold',
   },
-
 });

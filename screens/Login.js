@@ -1,6 +1,4 @@
-import Navbar from '../src/components/Navbar';
 import React, { useState } from 'react';
-
 import {
   View,
   Text,
@@ -9,21 +7,22 @@ import {
   Alert,
   Image,
   ScrollView,
-  StatusBar,
 } from 'react-native';
-
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
 import { FontAwesome } from '@expo/vector-icons';
-
 import {
   signInWithEmailAndPassword,
   sendPasswordResetEmail,
 } from 'firebase/auth';
 
+import Navbar from '../src/components/Navbar';
 import { auth } from '../src/config/firebaseConfig';
 import CustomInput from '../src/components/CustomInput';
 import CustomButton from '../src/components/CustomButton';
 
 export default function Login({ navigation }) {
+  const insets = useSafeAreaInsets();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -67,14 +66,8 @@ export default function Login({ navigation }) {
     setLoading(true);
 
     try {
-      await signInWithEmailAndPassword(
-        auth,
-        correo,
-        password
-      );
-
+      await signInWithEmailAndPassword(auth, correo, password);
       // Firebase inicia la sesión si los datos están bien
-
     } catch (error) {
       console.error('Error de login:', error.code);
 
@@ -104,7 +97,6 @@ export default function Login({ navigation }) {
       }
 
       setErrors({ password: mensaje });
-
     } finally {
       setLoading(false);
     }
@@ -137,7 +129,6 @@ export default function Login({ navigation }) {
         'Recuperar contraseña',
         'Si el correo está registrado, recibirás instrucciones para restablecer tu contraseña.'
       );
-
     } catch (error) {
       console.error('Error de recuperación:', error.code);
 
@@ -149,18 +140,18 @@ export default function Login({ navigation }) {
   };
 
   return (
-    <View style={styles.screen}>
-      <StatusBar
-        backgroundColor="#006DA8"
-        barStyle="light-content"
-      />
-      <Navbar />
+    <SafeAreaView style={styles.screen} edges={['left', 'right', 'bottom']}>
+      <StatusBar style="light" />
+
+      {/* Franja azul: cubre la barra de estado y el Navbar */}
+      <View style={{ backgroundColor: '#006DA8', paddingTop: insets.top }}>
+        <Navbar />
+      </View>
 
       <ScrollView
         contentContainerStyle={styles.container}
         keyboardShouldPersistTaps="handled"
       >
-
         {/* Isotipo de ALUMAT */}
         <Image
           source={require('../assets/isotipo.png')}
@@ -169,44 +160,30 @@ export default function Login({ navigation }) {
         />
 
         {/* Título */}
-        <Text style={styles.title}>
-          Inicia Sesión
-        </Text>
+        <Text style={styles.title}>Inicia Sesión</Text>
 
         <View style={styles.form}>
-
           {/* Correo electrónico */}
-          <Text style={styles.label}>
-            Correo electrónico
-          </Text>
+          <Text style={styles.label}>Correo electrónico</Text>
 
-          <View
-            style={errors.email ? styles.inputError : null}
-          >
+          <View style={errors.email ? styles.inputError : null}>
             <CustomInput
               placeholder="user@gmail.com"
               value={email}
               onChangeText={(texto) => {
                 setEmail(texto);
-                setErrors((prev) => ({
-                  ...prev,
-                  email: '',
-                }));
+                setErrors((prev) => ({ ...prev, email: '' }));
               }}
               keyboardType="email-address"
             />
           </View>
 
           {errors.email ? (
-            <Text style={styles.errorText}>
-              {errors.email}
-            </Text>
+            <Text style={styles.errorText}>{errors.email}</Text>
           ) : null}
 
           {/* Contraseña */}
-          <Text style={styles.label}>
-            Contraseña
-          </Text>
+          <Text style={styles.label}>Contraseña</Text>
 
           <View style={styles.passwordRow}>
             <View
@@ -220,10 +197,7 @@ export default function Login({ navigation }) {
                 value={password}
                 onChangeText={(texto) => {
                   setPassword(texto);
-                  setErrors((prev) => ({
-                    ...prev,
-                    password: '',
-                  }));
+                  setErrors((prev) => ({ ...prev, password: '' }));
                 }}
                 secureTextEntry={!showPassword}
               />
@@ -243,9 +217,7 @@ export default function Login({ navigation }) {
           </View>
 
           {errors.password ? (
-            <Text style={styles.errorText}>
-              {errors.password}
-            </Text>
+            <Text style={styles.errorText}>{errors.password}</Text>
           ) : null}
 
           {/* Botón entrar */}
@@ -261,9 +233,7 @@ export default function Login({ navigation }) {
             style={styles.forgotContainer}
             onPress={recuperarPassword}
           >
-            <Text style={styles.forgotText}>
-              Olvidé mi contraseña
-            </Text>
+            <Text style={styles.forgotText}>Olvidé mi contraseña</Text>
           </TouchableOpacity>
 
           {/* Registrarse */}
@@ -273,15 +243,12 @@ export default function Login({ navigation }) {
           >
             <Text style={styles.registerText}>
               ¿No tienes cuenta?{' '}
-              <Text style={styles.registerLink}>
-                creá una.
-              </Text>
+              <Text style={styles.registerLink}>creá una.</Text>
             </Text>
           </TouchableOpacity>
-
         </View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 

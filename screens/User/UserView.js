@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import {
@@ -9,41 +8,43 @@ import {
   Image,
   Alert,
   ScrollView,
-  StatusBar,
 } from 'react-native';
 
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
 import { FontAwesome } from '@expo/vector-icons';
 import { signOut } from 'firebase/auth';
 import { auth } from '../../src/config/firebaseConfig';
 
 export default function UserView({ navigation }) {
+  const insets = useSafeAreaInsets();
 
-const [nombreCompleto, setNombreCompleto] = useState('');
-const [correo, setCorreo] = useState('');
+  const [nombreCompleto, setNombreCompleto] = useState('');
+  const [correo, setCorreo] = useState('');
 
-useFocusEffect(
-  useCallback(() => {
-    const actualizarDatos = async () => {
-      const user = auth.currentUser;
+  useFocusEffect(
+    useCallback(() => {
+      const actualizarDatos = async () => {
+        const user = auth.currentUser;
 
-      if (user) {
-        await user.reload();
-        setNombreCompleto(user.displayName || '');
-        setCorreo(user.email || '');
-      }
-    };
+        if (user) {
+          await user.reload();
+          setNombreCompleto(user.displayName || '');
+          setCorreo(user.email || '');
+        }
+      };
 
-    actualizarDatos().catch(() => {
-      const user = auth.currentUser;
-      setNombreCompleto(user?.displayName || '');
-      setCorreo(user?.email || '');
-    });
-  }, [])
-);
+      actualizarDatos().catch(() => {
+        const user = auth.currentUser;
+        setNombreCompleto(user?.displayName || '');
+        setCorreo(user?.email || '');
+      });
+    }, [])
+  );
 
-const partes = nombreCompleto.trim().split(/\s+/);
-const nombre = partes[0] || 'Sin registrar';
-const apellido = partes.slice(1).join(' ') || 'Sin registrar';
+  const partes = nombreCompleto.trim().split(/\s+/);
+  const nombre = partes[0] || 'Sin registrar';
+  const apellido = partes.slice(1).join(' ') || 'Sin registrar';
 
   const cerrarSesion = () => {
     Alert.alert(
@@ -66,13 +67,16 @@ const apellido = partes.slice(1).join(' ') || 'Sin registrar';
   };
 
   return (
-    <View style={styles.container}>
-      <StatusBar
-        backgroundColor="#0A72AB"
-        barStyle="light-content"
-      />
+    <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
+      <StatusBar style="light" />
 
-      <View style={styles.header}>
+      {/* Header azul: cubre la barra de estado */}
+      <View
+        style={[
+          styles.header,
+          { height: 75 + insets.top, paddingTop: insets.top },
+        ]}
+      >
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <FontAwesome name="arrow-left" size={22} color="#FFFFFF" />
         </TouchableOpacity>
@@ -111,14 +115,11 @@ const apellido = partes.slice(1).join(' ') || 'Sin registrar';
           <Text style={styles.editText}>Editar perfil</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.logoutButton}
-          onPress={cerrarSesion}
-        >
+        <TouchableOpacity style={styles.logoutButton} onPress={cerrarSesion}>
           <Text style={styles.logoutText}>Cerrar sesión</Text>
         </TouchableOpacity>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -128,7 +129,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#E7E7D8',
   },
   header: {
-    height: 75,
     backgroundColor: '#0A72AB',
     flexDirection: 'row',
     alignItems: 'center',

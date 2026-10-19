@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import {
   View,
@@ -10,14 +9,17 @@ import {
   Alert,
   ScrollView,
   ActivityIndicator,
-  StatusBar,
 } from 'react-native';
 
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
 import { FontAwesome } from '@expo/vector-icons';
 import { updateProfile } from 'firebase/auth';
 import { auth } from '../../src/config/firebaseConfig';
 
 export default function UserForm({ navigation }) {
+  const insets = useSafeAreaInsets();
+
   const user = auth.currentUser;
   const nombreCompleto = user?.displayName?.trim() || '';
   const partes = nombreCompleto.split(/\s+/);
@@ -58,14 +60,16 @@ export default function UserForm({ navigation }) {
   };
 
   return (
-    <View style={styles.container}>
-      <StatusBar
-        backgroundColor="#0A72AB"
-        barStyle="light-content"
-      />
+    <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
+      <StatusBar style="light" />
 
-      {/* NAVBAR */}
-      <View style={styles.header}>
+      {/* NAVBAR: cubre la barra de estado */}
+      <View
+        style={[
+          styles.header,
+          { height: 75 + insets.top, paddingTop: insets.top },
+        ]}
+      >
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <FontAwesome name="arrow-left" size={22} color="#FFFFFF" />
         </TouchableOpacity>
@@ -79,7 +83,10 @@ export default function UserForm({ navigation }) {
         <View style={{ width: 22 }} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+      >
         <Text style={styles.title}>EDITAR PERFIL</Text>
 
         {/* AVATAR */}
@@ -120,7 +127,7 @@ export default function UserForm({ navigation }) {
           )}
         </TouchableOpacity>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -130,7 +137,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#E7E7D8',
   },
   header: {
-    height: 75,
     backgroundColor: '#0A72AB',
     flexDirection: 'row',
     alignItems: 'center',
@@ -188,4 +194,3 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
 });
-

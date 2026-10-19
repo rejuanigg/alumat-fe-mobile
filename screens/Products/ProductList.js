@@ -1,6 +1,8 @@
-import Navbar from '../../src/components/Navbar';
 import React from 'react';
 import { Text, View , FlatList, TouchableOpacity, StyleSheet } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar'
+
 
 const mockProducts = [
   { id: '1', name: 'Vidrio templado 6mm', category: 'Vidrio', price: '90000', stock: false, description: 'Este vidrio es templado con un grosor de 6mm' },
@@ -8,6 +10,7 @@ const mockProducts = [
 ];
 
 export default function ProductList({ navigation }) {
+  const insets = useSafeAreaInsets();
   const renderItem = ({ item }) => (
     <View style={styles.card}>
       <View style={styles.imagePlaceholder} />
@@ -30,7 +33,11 @@ export default function ProductList({ navigation }) {
   );
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.screen} edges={['left', 'right', 'bottom']}>
+      <StatusBar
+        style="light"
+      />
+    <View style={[styles.container, { paddingTop: insets.top + 10 }]}>
       <View style={styles.headerContainer}>
         <Text style={styles.title}>PRODUCTOS</Text>
         <View style={styles.separator} />
@@ -55,10 +62,15 @@ export default function ProductList({ navigation }) {
         contentContainerStyle={styles.listContainer}
       />
     </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({ 
+  screen: {
+    flex: 1,
+    backgroundColor: '#F3F2E7',
+  },
   container: {
     flex: 1,
     backgroundColor: '#F3F2E7', 
