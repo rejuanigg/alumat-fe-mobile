@@ -51,6 +51,14 @@ export default function Home({ navigation }) {
           style={styles.logo}
           resizeMode="contain"
         />
+        <View style={styles.headerIcons}>
+          <TouchableOpacity style={styles.headerIconButton}>
+            <FontAwesome name="bell-o" size={22} color="#FFFFFF" />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.headerIconButton}>
+            <FontAwesome name="user-o" size={22} color="#FFFFFF" />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView
@@ -59,11 +67,11 @@ export default function Home({ navigation }) {
 
         {/*bienvenida*/}
         <Text style={styles.welcome}>
-          ¡Hola!
+          ¡Hola Tomas!
         </Text>
 
         <Text style={styles.subtitle}>
-          Aquí está el resumen de tu jornada actual
+          Aquí está tu resumen de tu jornada actual
         </Text>
 
         {/*tarjetas*/}
@@ -71,23 +79,21 @@ export default function Home({ navigation }) {
 
           {/*mis boletas*/}
           <CustomCard style={styles.card}>
-            <View style={styles.cardHeader}>
-              <Text style={styles.cardTitle}>
-                Mis boletas
-              </Text>
-
-              <FontAwesome
-                name="file-text-o"
-                size={24}
-                color="#0A72AB"
-              />
+            <View style={styles.cardMainContent}>
+              <View style={styles.cardTextGroup}>
+                <Text style={styles.cardTitle}>MIS BOLETAS</Text>
+                <View style={styles.countAndTag}>
+                  <Text style={styles.cardNumber}>2</Text>
+                  <View style={styles.statusTagContainer}>
+                    <Text style={styles.statusTagText}>Activo</Text>
+                  </View>
+                </View>
+                <Text style={styles.cardDescription}>Pendientes en gestión</Text>
+              </View>
+              <View style={styles.cardIconBox}>
+                <FontAwesome name="file-text-o" size={24} color="#0A72AB" />
+              </View>
             </View>
-
-            <Text style={styles.cardNumber}>2</Text>
-
-            <Text style={styles.cardDescription}>
-              Pendientes en gestión
-            </Text>
           </CustomCard>
 
           {/*productos-boton funcional*/}
@@ -97,66 +103,60 @@ export default function Home({ navigation }) {
             onPress={irAProductos}
           >
             <CustomCard style={styles.cardTouchable}>
-              <View style={styles.cardHeader}>
-                <Text style={styles.cardTitle}>
-                  Productos
-                </Text>
-
-                <FontAwesome
-                  name="cube"
-                  size={24}
-                  color="#0A72AB"
-                />
+              <View style={styles.cardMainContent}>
+                <View style={styles.cardTextGroup}>
+                  <Text style={styles.cardTitle}>PRODUCTOS</Text>
+                  <View style={styles.countAndTag}>
+                    <Text style={styles.cardNumber}>3</Text>
+                    <View style={styles.statusTagContainer}>
+                      <Text style={styles.statusTagText}>Activo</Text>
+                    </View>
+                  </View>
+                  <Text style={styles.cardDescription}>En proceso de creación</Text>
+                </View>
+                <View style={styles.cardIconBox}>
+                  <FontAwesome name="cube" size={24} color="#0A72AB" />
+                </View>
               </View>
-
-              <Text style={styles.cardNumber}>3</Text>
-
-              <Text style={styles.cardDescription}>
-                En proceso de creación
-              </Text>
             </CustomCard>
           </TouchableOpacity>
 
           {/*pedidos*/}
           <CustomCard style={styles.card}>
-            <View style={styles.cardHeader}>
-              <Text style={styles.cardTitle}>
-                Pedidos
-              </Text>
-
-              <FontAwesome
-                name="shopping-cart"
-                size={24}
-                color="#0A72AB"
-              />
+            <View style={styles.cardMainContent}>
+              <View style={styles.cardTextGroup}>
+                <Text style={styles.cardTitle}>PEDIDOS</Text>
+                <View style={styles.countAndTag}>
+                  <Text style={styles.cardNumber}>1</Text>
+                  <View style={styles.statusTagContainer}>
+                    <Text style={styles.statusTagText}>Activo</Text>
+                  </View>
+                </View>
+                <Text style={styles.cardDescription}>En preparación</Text>
+              </View>
+              <View style={styles.cardIconBox}>
+                <FontAwesome name="shopping-cart" size={24} color="#0A72AB" />
+              </View>
             </View>
-
-            <Text style={styles.cardNumber}>1</Text>
-
-            <Text style={styles.cardDescription}>
-              En preparación
-            </Text>
           </CustomCard>
 
           {/*inventario*/}
           <CustomCard style={styles.card}>
-            <View style={styles.cardHeader}>
-              <Text style={styles.cardTitle}>
-                Inventario
-              </Text>
-
-              <FontAwesome
-                name="archive"
-                size={24}
-                color="#0A72AB"
-              />
+            <View style={styles.cardMainContent}>
+              <View style={styles.cardTextGroup}>
+                <Text style={styles.cardTitle}>INVENTARIO</Text>
+                <View style={styles.countAndTag}>
+                  <Text style={styles.cardNumber}>4</Text>
+                  <View style={styles.statusTagContainer}>
+                    <Text style={styles.statusTagText}>Activo</Text>
+                  </View>
+                </View>
+                <Text style={styles.cardDescription}>Producto en stock bajo</Text>
+              </View>
+              <View style={styles.cardIconBox}>
+                <FontAwesome name="archive" size={24} color="#0A72AB" />
+              </View>
             </View>
-
-            <Text style={styles.cardNumber}>4</Text>
-
-            <Text style={styles.cardDescription}>
-              Productos con stock bajo
-            </Text>
           </CustomCard>
 
         </View>
@@ -192,6 +192,7 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: '#0A72AB',
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 22,
     paddingVertical: 10,
@@ -200,6 +201,15 @@ const styles = StyleSheet.create({
   logo: {
     width: 55,
     height: 55,
+  },
+
+  headerIcons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  headerIconButton: {
+    marginLeft: 18,
   },
 
   content: {
@@ -222,58 +232,85 @@ const styles = StyleSheet.create({
   },
 
   cardsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    alignItems: 'stretch',
+    width: '100%',
   },
 
-  //tarjetas normales
   card: {
-    width: '48%',
-    minHeight: 150,
-    padding: 12,
-    marginVertical: 7,
+    width: '100%',
+    padding: 16,
+    marginVertical: 6,
+    borderRadius: 12,
   },
 
-  //contenedor del boton productos
   cardButton: {
-    width: '48%',
-    marginVertical: 7,
+    width: '100%',
+    marginVertical: 6,
   },
 
-  //tarjeta productos
   cardTouchable: {
     width: '100%',
-    minHeight: 150,
-    padding: 12,
+    padding: 16,
     marginVertical: 0,
+    borderRadius: 12,
   },
 
-  cardHeader: {
+  cardMainContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    alignItems: 'center',
+  },
+
+  cardTextGroup: {
+    flex: 1,
   },
 
   cardTitle: {
-    fontSize: 13,
+    fontSize: 11,
     fontWeight: 'bold',
-    color: '#4D5061',
-    flexShrink: 1,
+    color: '#706F8A',
+    letterSpacing: 0.5,
+    marginBottom: 4,
+  },
+
+  countAndTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 2,
   },
 
   cardNumber: {
-    fontSize: 30,
+    fontSize: 32,
     fontWeight: 'bold',
+    color: '#1E1E1E',
+    marginRight: 10,
+  },
+
+  statusTagContainer: {
+    backgroundColor: '#D6EAF3',
+    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 2,
+  },
+
+  statusTagText: {
     color: '#0A72AB',
-    marginTop: 15,
+    fontSize: 10,
+    fontWeight: 'bold',
   },
 
   cardDescription: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#706F8A',
-    marginTop: 5,
+  },
+
+  cardIconBox: {
+    backgroundColor: '#E2EFF6',
+    borderRadius: 10,
+    width: 55,
+    height: 55,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 10,
   },
 
   logoutButton: {
@@ -290,7 +327,5 @@ const styles = StyleSheet.create({
   },
 
 });
-
-
 
 
