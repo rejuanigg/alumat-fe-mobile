@@ -4,17 +4,13 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  Alert,
   Image,
   ScrollView,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { FontAwesome } from '@expo/vector-icons';
-import {
-  signInWithEmailAndPassword,
-  sendPasswordResetEmail,
-} from 'firebase/auth';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 
 import { auth } from '../src/config/firebaseConfig';
 import CustomInput from '../src/components/CustomInput';
@@ -101,43 +97,6 @@ export default function Login({ navigation }) {
     }
   };
 
-  // Recuperar contraseña
-  const recuperarPassword = async () => {
-    const correo = email.trim().toLowerCase();
-
-    if (!correo) {
-      Alert.alert(
-        'Recuperar contraseña',
-        'Ingresá primero tu correo electrónico.'
-      );
-      return;
-    }
-
-    if (!validarCorreo(correo)) {
-      setErrors((prev) => ({
-        ...prev,
-        email: 'Correo electrónico con formato inválido.',
-      }));
-      return;
-    }
-
-    try {
-      await sendPasswordResetEmail(auth, correo);
-
-      Alert.alert(
-        'Recuperar contraseña',
-        'Si el correo está registrado, recibirás instrucciones para restablecer tu contraseña.'
-      );
-    } catch (error) {
-      console.error('Error de recuperación:', error.code);
-
-      Alert.alert(
-        'Error',
-        'No se pudo procesar la solicitud. Intentá nuevamente.'
-      );
-    }
-  };
-
   return (
     <SafeAreaView style={styles.screen} edges={['left', 'right', 'bottom']}>
       <StatusBar style="light" />
@@ -163,17 +122,17 @@ export default function Login({ navigation }) {
           {/* Correo electrónico */}
           <Text style={styles.label}>Correo electrónico</Text>
 
-          <View style={errors.email ? styles.inputError : null}>
-            <CustomInput
-              placeholder="user@gmail.com"
-              value={email}
-              onChangeText={(texto) => {
-                setEmail(texto);
-                setErrors((prev) => ({ ...prev, email: '' }));
-              }}
-              keyboardType="email-address"
-            />
-          </View>
+          <CustomInput
+            placeholder="user@gmail.com"
+            value={email}
+            onChangeText={(texto) => {
+              setEmail(texto);
+              setErrors((prev) => ({ ...prev, email: '' }));
+            }}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            error={!!errors.email}
+          />
 
           {errors.email ? (
             <Text style={styles.errorText}>{errors.email}</Text>
@@ -183,12 +142,7 @@ export default function Login({ navigation }) {
           <Text style={styles.label}>Contraseña</Text>
 
           <View style={styles.passwordRow}>
-            <View
-              style={[
-                styles.passwordInput,
-                errors.password ? styles.inputError : null,
-              ]}
-            >
+            <View style={styles.passwordInput}>
               <CustomInput
                 placeholder="********"
                 value={password}
@@ -197,6 +151,7 @@ export default function Login({ navigation }) {
                   setErrors((prev) => ({ ...prev, password: '' }));
                 }}
                 secureTextEntry={!showPassword}
+                error={!!errors.password}
               />
             </View>
 
@@ -224,6 +179,18 @@ export default function Login({ navigation }) {
               onPress={handleLogin}
             />
           </View>
+
+          {/* Recuperar contraseña */}
+          <TouchableOpacity
+            style={styles.forgotContainer}
+            onPress={() =>
+              navigation.navigate('ForgotPassword', {
+                email: email.trim().toLowerCase(),
+              })
+            }
+          >
+            <Text style={styles.forgotText}>Olvidé mi contraseña</Text>
+          </TouchableOpacity>
 
           {/* Registrarse */}
           <TouchableOpacity
@@ -294,12 +261,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 12,
     padding: 10,
-  },
-
-  inputError: {
-    borderColor: '#FF3333',
-    borderWidth: 1,
-    borderRadius: 8,
   },
 
   errorText: {
