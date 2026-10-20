@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, ScrollView, StyleSheet } from 'react-native';
-import Navbar from '../../src/components/Navbar'; // ajustá la ruta según tu proyecto
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar'
 
 export default function ProductForm({ route, navigation }) {
@@ -29,7 +28,6 @@ export default function ProductForm({ route, navigation }) {
   const handleChange = (field, value) => {
     setFormData({ ...formData, [field]: value });
   };
-  const insets = useSafeAreaInsets();
   
   return (
       <SafeAreaView style={styles.screen} edges={['left', 'right', 'bottom']}>
@@ -37,8 +35,7 @@ export default function ProductForm({ route, navigation }) {
         <StatusBar
             style="light"
             />
-        <View style={[styles.container, { paddingTop: insets.top + 10 }]}>
-          <Navbar />
+        <View style={[styles.container, { paddingTop: 10 }]}>
           <ScrollView style={styles.container}>
             <View style={styles.headerContainer}>
               <Text style={styles.title}>{isEditing ? 'EDITAR PRODUCTOS' : 'PRODUCTOS'}</Text>

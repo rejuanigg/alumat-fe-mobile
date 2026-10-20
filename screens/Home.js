@@ -1,4 +1,3 @@
-import Navbar from '../src/components/Navbar';
 import {
   View,
   Text,
@@ -8,7 +7,7 @@ import {
   Image,
   ScrollView,
 } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar'
 import { FontAwesome } from '@expo/vector-icons';
 import { signOut } from 'firebase/auth';
@@ -35,23 +34,12 @@ export default function Home({ navigation }) {
     navigation.navigate('Products');
   };
 
-  const insets = useSafeAreaInsets();
-
   return (
     <SafeAreaView style={styles.screen} edges={['left', 'right', 'bottom']}>
 
       <StatusBar
         style="light"
       />
-
-      {/*encabezado azul*/}
-      <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
-        <Image
-          source={require('../assets/isotipo.png')}
-          style={styles.logo}
-          resizeMode="contain"
-        />
-      </View>
 
       <ScrollView
         contentContainerStyle={styles.content}

@@ -16,7 +16,6 @@ import {
   sendPasswordResetEmail,
 } from 'firebase/auth';
 
-import Navbar from '../src/components/Navbar';
 import { auth } from '../src/config/firebaseConfig';
 import CustomInput from '../src/components/CustomInput';
 import CustomButton from '../src/components/CustomButton';
@@ -143,10 +142,8 @@ export default function Login({ navigation }) {
     <SafeAreaView style={styles.screen} edges={['left', 'right', 'bottom']}>
       <StatusBar style="light" />
 
-      {/* Franja azul: cubre la barra de estado y el Navbar */}
-      <View style={{ backgroundColor: '#006DA8', paddingTop: insets.top }}>
-        <Navbar />
-      </View>
+      {/* Franja azul: cubre la barra de estado */}
+      <View style={{ backgroundColor: '#006DA8', height: insets.top }} />
 
       <ScrollView
         contentContainerStyle={styles.container}
@@ -227,14 +224,6 @@ export default function Login({ navigation }) {
               onPress={handleLogin}
             />
           </View>
-
-          {/* Recuperar contraseña */}
-          <TouchableOpacity
-            style={styles.forgotContainer}
-            onPress={recuperarPassword}
-          >
-            <Text style={styles.forgotText}>Olvidé mi contraseña</Text>
-          </TouchableOpacity>
 
           {/* Registrarse */}
           <TouchableOpacity

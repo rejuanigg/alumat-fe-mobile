@@ -1,6 +1,6 @@
 import React from 'react';
 import { Text, View , FlatList, TouchableOpacity, StyleSheet } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar'
 
 
@@ -10,7 +10,6 @@ const mockProducts = [
 ];
 
 export default function ProductList({ navigation }) {
-  const insets = useSafeAreaInsets();
   const renderItem = ({ item }) => (
     <View style={styles.card}>
       <View style={styles.imagePlaceholder} />
@@ -37,7 +36,7 @@ export default function ProductList({ navigation }) {
       <StatusBar
         style="light"
       />
-    <View style={[styles.container, { paddingTop: insets.top + 10 }]}>
+    <View style={[styles.container, { paddingTop: 10 }]}>
       <View style={styles.headerContainer}>
         <Text style={styles.title}>PRODUCTOS</Text>
         <View style={styles.separator} />
