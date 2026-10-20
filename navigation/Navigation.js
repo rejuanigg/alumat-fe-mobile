@@ -9,6 +9,7 @@ import SignUp from '../screens/SignUp';
 import Home from '../screens/Home';
 import ProductsStack from './ProductsStack';
 import UserStack from './UserStack';
+import { navbarScreenOptions } from '../src/components/Navbar';
 
 const Stack = createStackNavigator();
 
@@ -46,7 +47,7 @@ export default function Navigation() {
             <Stack.Screen
               name="Home"
               component={Home}
-              options={{ headerShown: false }}
+              options={navbarScreenOptions}
             />
             <Stack.Screen
               name="Products"

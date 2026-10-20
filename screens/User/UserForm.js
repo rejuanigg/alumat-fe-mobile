@@ -5,20 +5,18 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  Image,
   Alert,
   ScrollView,
   ActivityIndicator,
 } from 'react-native';
 
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { FontAwesome } from '@expo/vector-icons';
 import { updateProfile } from 'firebase/auth';
 import { auth } from '../../src/config/firebaseConfig';
 
 export default function UserForm({ navigation }) {
-  const insets = useSafeAreaInsets();
 
   const user = auth.currentUser;
   const nombreCompleto = user?.displayName?.trim() || '';
@@ -63,25 +61,6 @@ export default function UserForm({ navigation }) {
     <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
       <StatusBar style="light" />
 
-      {/* NAVBAR: cubre la barra de estado */}
-      <View
-        style={[
-          styles.header,
-          { height: 75 + insets.top, paddingTop: insets.top },
-        ]}
-      >
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <FontAwesome name="arrow-left" size={22} color="#FFFFFF" />
-        </TouchableOpacity>
-
-        <Image
-          source={require('../../assets/isotipo.png')}
-          style={styles.logo}
-          resizeMode="contain"
-        />
-
-        <View style={{ width: 22 }} />
-      </View>
 
       <ScrollView
         contentContainerStyle={styles.content}
@@ -135,17 +114,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#E7E7D8',
-  },
-  header: {
-    backgroundColor: '#0A72AB',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 22,
-  },
-  logo: {
-    width: 55,
-    height: 55,
   },
   content: {
     paddingHorizontal: 25,
