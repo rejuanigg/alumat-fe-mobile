@@ -1,143 +1,307 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, ScrollView, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { StatusBar } from 'expo-status-bar'
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  Pressable,
+  ScrollView,
+  KeyboardAvoidingView,
+  ActivityIndicator,
+  Platform,
+  StyleSheet,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Save, Plus, Trash2 } from 'lucide-react-native';
+
+import { TENANT } from '../../src/config/tenantConfig';
+import { MESSAGES } from '../../src/constants/messages';
+import { PRODUCT_LIMITS } from '../../src/validation/productValidation';
+import useProductForm from '../../src/hooks/useProductForm';
+import ScreenDecorations from '../../src/components/ScreenDecorations';
+import ErrorBanner from '../../src/components/auth/ErrorBanner';
+import PrimaryButton from '../../src/components/auth/PrimaryButton';
+import ProductField from '../../src/components/products/ProductField';
+import ProductImage from '../../src/components/products/ProductImage';
+
+const COLORS = TENANT.colors;
+const T = MESSAGES.products;
 
 export default function ProductForm({ route, navigation }) {
+  const insets = useSafeAreaInsets();
   const product = route.params?.product;
-  const isEditing = !!product;
 
-  const [formData, setFormData] = useState({
-    name: '',
-    category: '',
-    description: '',
-    price: '',
-  });
+  const {
+    isEditing,
+    values,
+    errors,
+    requestError,
+    saving,
+    deleting,
+    onChange,
+    onSubmit,
+    onDelete,
+  } = useProductForm(product, () => navigation.goBack());
 
-  useEffect(() => {
-    if (isEditing) {
-      setFormData({
-        name: product.name,
-        category: product.category,
-        description: product.description,
-        price: product.price,
-      });
-    }
-  }, [product]);
+  // Confirmación en la misma pantalla (Alert con botones no funciona en web)
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const busy = saving || deleting;
 
-  const handleChange = (field, value) => {
-    setFormData({ ...formData, [field]: value });
-  };
-  
   return (
-      <SafeAreaView style={styles.screen} edges={['left', 'right', 'bottom']}>
+    <View style={styles.screen}>
+      <ScreenDecorations dotsTop={0.04} dotsRight={0.06} dotsBottom={0.04} dotsLeft={0.06} />
 
-        <StatusBar
-            style="light"
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <ScrollView
+          style={styles.flex}
+          contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 56 }]}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.inner}>
+            <Text style={styles.title}>{isEditing ? T.editTitle : T.createTitle}</Text>
+            <Text style={styles.subtitle}>{T.subtitle}</Text>
+
+            {/* Fondo listo para la foto: se rellena cuando el producto tenga imageUrl */}
+            <ProductImage
+              uri={product?.imageUrl}
+              label={T.imagePlaceholder}
+              style={styles.image}
             />
-        <View style={[styles.container, { paddingTop: 10 }]}>
-          <ScrollView style={styles.container}>
-            <View style={styles.headerContainer}>
-              <Text style={styles.title}>{isEditing ? 'EDITAR PRODUCTOS' : 'PRODUCTOS'}</Text>
-              <View style={styles.separator} />
-              <Text style={styles.subtitle}>
-                Crea, edita y gestiona los productos de la empresa ALUMAT
-              </Text>
-            </View>
 
-            <View style={styles.formContainer}>
-              {/* Aquí puedes reemplazar por tu <CustomInput> */}
-              <Text style={styles.label}>Nombre del producto</Text>
-              <TextInput
-                style={styles.input}
-                value={formData.name}
-                onChangeText={(text) => handleChange('name', text)}
-                placeholder="Ej: Vidrio templado 6mm"
-                />
+            <ProductField
+              label={T.nameLabel}
+              placeholder={T.namePlaceholder}
+              value={values.name}
+              onChangeText={onChange('name')}
+              error={errors.name}
+              maxLength={PRODUCT_LIMITS.name}
+              autoCapitalize="sentences"
+               returnKeyType="next"
+            />
 
-              <Text style={styles.label}>Categorías</Text>
-              <TextInput
-                style={styles.input}
-                value={formData.category}
-                onChangeText={(text) => handleChange('category', text)}
-                placeholder="Seleccionar categoría..."
+            <ProductField
+              label={T.categoryLabel}
+              placeholder={T.categoryPlaceholder}
+              value={values.category}
+              onChangeText={onChange('category')}
+              error={errors.category}
+              maxLength={PRODUCT_LIMITS.category}
+              autoCapitalize="sentences"
+            />
+
+            <ProductField
+              label={T.descriptionLabel}
+              placeholder={T.descriptionPlaceholder}
+              value={values.description}
+              onChangeText={onChange('description')}
+              error={errors.description}
+              maxLength={PRODUCT_LIMITS.description}
+              multiline
+            />
+
+            <View style={styles.row}>
+              <ProductField
+                style={styles.flex}
+                label={T.priceLabel}
+                placeholder={T.pricePlaceholder}
+                value={values.price}
+                onChangeText={onChange('price')}
+                error={errors.price}
+                keyboardType="decimal-pad"
               />
-
-              <Text style={styles.label}>Descripción</Text>
-              <TextInput
-                style={[styles.input, styles.textArea]}
-                value={formData.description}
-                onChangeText={(text) => handleChange('description', text)}
-                placeholder="Descripción del producto..."
-                multiline={true}
-                numberOfLines={4}
-                textAlignVertical="top"
-                />
-
-              <Text style={styles.label}>Precio</Text>
-              <TextInput
-                style={styles.input}
-                value={formData.price}
-                onChangeText={(text) => handleChange('price', text)}
-                placeholder="$ 0,00"
-                keyboardType="numeric"
-                />
+              <ProductField
+                style={styles.flex}
+                label={T.stockLabel}
+                placeholder={T.stockPlaceholder}
+                value={values.stock}
+                onChangeText={onChange('stock')}
+                error={errors.stock}
+                keyboardType="number-pad"
+              />
             </View>
-          </ScrollView>
-        </View>
-      </SafeAreaView>
-  );    
-}   
 
+            <ErrorBanner message={requestError} />
+
+            <PrimaryButton
+              title={isEditing ? T.save : T.create}
+              loadingTitle={T.saving}
+              loading={saving}
+              disabled={deleting}
+              onPress={onSubmit}
+              Icon={isEditing ? Save : Plus}
+            />
+
+            {/* Eliminar (solo al editar), con confirmación en dos pasos */}
+            {isEditing ? (
+              confirmingDelete ? (
+                <View style={styles.confirmBox} accessibilityLiveRegion="polite">
+                  <Text style={styles.confirmText}>{T.deleteConfirm}</Text>
+                  <View style={styles.confirmActions}>
+                    <Pressable
+                      style={({ pressed }) => [styles.outlineButton, pressed && styles.pressed]}
+                      onPress={() => setConfirmingDelete(false)}
+                      disabled={busy}
+                      accessibilityRole="button"
+                    >
+                      <Text style={styles.cancelText}>{T.deleteCancel}</Text>
+                    </Pressable>
+                    <Pressable
+                      style={({ pressed }) => [
+                        styles.dangerButton,
+                        (pressed || busy) && styles.pressed,
+                      ]}
+                      onPress={onDelete}
+                      disabled={busy}
+                      accessibilityRole="button"
+                      accessibilityState={{ disabled: busy, busy: deleting }}
+                    >
+                      {deleting ? <ActivityIndicator color={COLORS.white} /> : null}
+                      <Text style={styles.dangerText}>
+                        {deleting ? T.deleting : T.deleteConfirmAction}
+                      </Text>
+                    </Pressable>
+                  </View>
+                </View>
+              ) : (
+                <Pressable
+                  style={({ pressed }) => [styles.deleteLink, pressed && styles.pressed]}
+                  onPress={() => setConfirmingDelete(true)}
+                  disabled={busy}
+                  accessibilityRole="button"
+                >
+                  <Trash2 size={20} color={COLORS.error} strokeWidth={1.75} />
+                  <Text style={styles.deleteLinkText}>{T.delete}</Text>
+                </Pressable>
+              )
+            ) : null}
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </View>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Estilos
+// ---------------------------------------------------------------------------
 const styles = StyleSheet.create({
-  container: {
+  flex: {
     flex: 1,
-    backgroundColor: '#F3F2E7',
   },
+
   screen: {
     flex: 1,
-    backgroundColor: '#F3F2E7',
+    backgroundColor: COLORS.background,
   },
-  headerContainer: {
-    paddingHorizontal: 20,
-    paddingTop: 40,
+
+  content: {
+    paddingHorizontal: 24,
+    paddingTop: 32,
   },
+
+  inner: {
+    width: '100%',
+    maxWidth: 520,
+    alignSelf: 'center',
+  },
+
   title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#222',
-    textTransform: 'uppercase',
-  },
-  separator: {
-    height: 2,
-    backgroundColor: '#CCC',
-    marginVertical: 10,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 30,
-  },
-  formContainer: {
-    paddingHorizontal: 20,
-    paddingBottom: 40,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#333',
+    fontSize: 32,
+    fontWeight: '800',
+    color: COLORS.title,
     marginBottom: 8,
   },
-  input: {
-    backgroundColor: '#FFF',
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    borderRadius: 5,
-    padding: 12,
-    fontSize: 14,
+
+  subtitle: {
+    fontSize: 18,
+    lineHeight: 25,
+    color: COLORS.text,
     marginBottom: 20,
   },
-  textArea: {
-    height: 100,
+
+  image: {
+    marginBottom: 20,
+  },
+
+  row: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+
+  pressed: {
+    opacity: 0.85,
+  },
+
+  // Eliminar
+  deleteLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'center',
+    gap: 8,
+    minHeight: 48,
+    paddingHorizontal: 12,
+    marginTop: 20,
+  },
+
+  deleteLinkText: {
+    color: COLORS.error,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+
+  confirmBox: {
+    backgroundColor: COLORS.surface,
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: COLORS.error,
+    padding: 16,
+    marginTop: 24,
+  },
+
+  confirmText: {
+    color: COLORS.title,
+    fontSize: 15,
+    lineHeight: 21,
+    marginBottom: 14,
+  },
+
+  confirmActions: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+
+  outlineButton: {
+    flex: 1,
+    minHeight: 48,
+    borderRadius: 24,
+    borderWidth: 1.5,
+    borderColor: COLORS.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  cancelText: {
+    color: COLORS.title,
+    fontSize: 15,
+    fontWeight: '600',
+  },
+
+  dangerButton: {
+    flex: 1,
+    flexDirection: 'row',
+    gap: 8,
+    minHeight: 48,
+    borderRadius: 24,
+    backgroundColor: COLORS.error,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  dangerText: {
+    color: COLORS.white,
+    fontSize: 15,
+    fontWeight: '700',
   },
 });

@@ -1,173 +1,304 @@
-import React from 'react';
-import { Text, View , FlatList, TouchableOpacity, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { StatusBar } from 'expo-status-bar'
+import React, { useCallback, useEffect, useState } from 'react';
+import { View, Text, Pressable, FlatList, ActivityIndicator, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Plus, PackageOpen, ChevronRight } from 'lucide-react-native';
 
+import { COLORS as BASE_COLORS } from '../../src/theme/colors';
+import { TENANT } from '../../src/config/tenantConfig';
+import { softShadow } from '../../src/theme/shadows';
+import { MESSAGES } from '../../src/constants/messages';
+import { subscribeToProducts } from '../../src/services/productService';
+import { formatPrice } from '../../src/utils/format';
+import ScreenDecorations from '../../src/components/ScreenDecorations';
+import ErrorBanner from '../../src/components/auth/ErrorBanner';
+import ProductImage from '../../src/components/products/ProductImage';
 
-const mockProducts = [
-  { id: '1', name: 'Vidrio templado 6mm', category: 'Vidrio', price: '90000', stock: false, description: 'Este vidrio es templado con un grosor de 6mm' },
-  { id: '2', name: 'Vidrio templado 5x5', category: 'Vidrio', price: '45000', stock: false, description: 'Vidrio templado de 5x5' },
-];
+// ---------------------------------------------------------------------------
+// Colores (paleta base + los propios de las tarjetas, igual que Home)
+// ---------------------------------------------------------------------------
+const COLORS = {
+  ...BASE_COLORS,
+  card: '#F6F6F0',
+  cardBorder: '#E3E4D6',
+  cardLabel: '#5B6578',
+  badge: '#D6E8F1',
+  badgeEmpty: '#F3DCDC',
+  // Tonos accesibles sobre fondos claros
+  text: TENANT.colors.text,
+  error: TENANT.colors.error,
+};
 
-export default function ProductList({ navigation }) {
-  const renderItem = ({ item }) => (
-    <View style={styles.card}>
-      <View style={styles.imagePlaceholder} />
-      <View style={styles.cardContent}>
-        <Text style={styles.productName}>{item.name}</Text>
-        <Text style={styles.productCategory}>Categoría: {item.category}</Text>
-        <View style={styles.cardActions}>
-          <View style={styles.stockBadge}>
-            <Text style={styles.stockText}>{item.stock ? 'EN STOCK' : 'SIN STOCK'}</Text>
-          </View>
-          <TouchableOpacity 
-            style={styles.editButton}
-            onPress={() => navigation.navigate('ProductForm', { product: item })}
-          >
-            <Text style={styles.editButtonText}>Editar {'>'}</Text>
-          </TouchableOpacity>
+const T = MESSAGES.products;
+
+// ---------------------------------------------------------------------------
+// Tarjeta de producto
+// ---------------------------------------------------------------------------
+function ProductCard({ product, onPress }) {
+  const inStock = product.stock > 0;
+
+  return (
+    <Pressable
+      style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`${product.name}, ${product.category}, ${formatPrice(product.price)}, ${
+        inStock ? `${product.stock} ${T.units}` : T.outOfStock
+      }`}
+      accessibilityHint={T.edit}
+    >
+      <ProductImage uri={product.imageUrl} size={84} />
+
+      <View style={styles.cardBody}>
+        <Text style={styles.cardCategory} numberOfLines={1}>
+          {product.category.toUpperCase()}
+        </Text>
+        <Text style={styles.cardName} numberOfLines={2}>
+          {product.name}
+        </Text>
+        <Text style={styles.cardPrice}>{formatPrice(product.price)}</Text>
+
+        <View style={[styles.badge, !inStock && styles.badgeEmpty]}>
+          <Text style={[styles.badgeText, !inStock && styles.badgeTextEmpty]}>
+            {inStock ? `${T.inStock} · ${product.stock} ${T.units}` : T.outOfStock}
+          </Text>
         </View>
       </View>
+
+      <ChevronRight size={22} color={COLORS.text} strokeWidth={1.75} />
+    </Pressable>
+  );
+}
+
+export default function ProductList({ navigation }) {
+  const insets = useSafeAreaInsets();
+
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
+  // Cambia para volver a suscribirse al tocar "Reintentar"
+  const [attempt, setAttempt] = useState(0);
+
+  // Lista en tiempo real: se actualiza sola al crear, editar o eliminar
+  useEffect(() => {
+    setLoading(true);
+    setLoadError(null);
+
+    return subscribeToProducts(
+      (items) => {
+        setProducts(items);
+        setLoading(false);
+      },
+      () => {
+        setLoadError(MESSAGES.productErrors.load);
+        setLoading(false);
+      }
+    );
+  }, [attempt]);
+
+  const retry = useCallback(() => setAttempt((n) => n + 1), []);
+
+  const header = (
+    <View>
+      <Text style={styles.title}>{T.title}</Text>
+      <Text style={styles.subtitle}>{T.subtitle}</Text>
+
+      <Pressable
+        style={({ pressed }) => [styles.addButton, pressed && styles.pressed]}
+        onPress={() => navigation.navigate('ProductForm')}
+        accessibilityRole="button"
+      >
+        <Plus size={20} color={COLORS.white} strokeWidth={2.25} />
+        <Text style={styles.addButtonText}>{T.add}</Text>
+      </Pressable>
+
+      <ErrorBanner message={loadError} actionLabel={T.retry} onAction={retry} />
+    </View>
+  );
+
+  const empty = loading ? (
+    <ActivityIndicator size="large" color={COLORS.primary} style={styles.loader} />
+  ) : loadError ? null : (
+    <View style={styles.empty}>
+      <View style={styles.emptyIcon}>
+        <PackageOpen size={40} color={COLORS.title} strokeWidth={1.5} />
+      </View>
+      <Text style={styles.emptyTitle}>{T.empty}</Text>
+      <Text style={styles.emptyHint}>{T.emptyHint}</Text>
     </View>
   );
 
   return (
-    <SafeAreaView style={styles.screen} edges={['left', 'right', 'bottom']}>
-      <StatusBar
-        style="light"
-      />
-    <View style={[styles.container, { paddingTop: 10 }]}>
-      <View style={styles.headerContainer}>
-        <Text style={styles.title}>PRODUCTOS</Text>
-        <View style={styles.separator} />
-        <Text style={styles.subtitle}>
-          Crea, edita y gestiona los productos de la empresa ALUMAT
-        </Text>
-      </View>
-
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity 
-          style={styles.addButton}
-          onPress={() => navigation.navigate('ProductForm')}
-        >
-          <Text style={styles.addButtonText}>+ Nuevo producto</Text>
-        </TouchableOpacity>
-      </View>
+    <View style={styles.screen}>
+      <ScreenDecorations dotsTop={0.04} dotsRight={0.06} dotsBottom={0.04} dotsLeft={0.06} />
 
       <FlatList
-        data={mockProducts}
+        data={products}
         keyExtractor={(item) => item.id}
-        renderItem={renderItem}
-        contentContainerStyle={styles.listContainer}
+        renderItem={({ item }) => (
+          <ProductCard
+            product={item}
+            onPress={() => navigation.navigate('ProductForm', { product: item })}
+          />
+        )}
+        ListHeaderComponent={header}
+        ListEmptyComponent={empty}
+        style={styles.flex}
+        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 56 }]}
+        showsVerticalScrollIndicator={false}
       />
     </View>
-    </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({ 
+// ---------------------------------------------------------------------------
+// Estilos
+// ---------------------------------------------------------------------------
+const styles = StyleSheet.create({
+  flex: {
+    flex: 1,
+  },
+
   screen: {
     flex: 1,
-    backgroundColor: '#F3F2E7',
+    backgroundColor: COLORS.background,
   },
-  container: {
-    flex: 1,
-    backgroundColor: '#F3F2E7', 
+
+  content: {
+    width: '100%',
+    maxWidth: 568, // 520 de contenido + 24 de margen por lado, igual que Home
+    alignSelf: 'center',
+    paddingHorizontal: 24,
+    paddingTop: 32,
   },
-  headerContainer: {
-    paddingHorizontal: 20,
-    paddingTop: 40,
-  },
+
   title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#222',
+    fontSize: 32,
+    fontWeight: '800',
+    color: COLORS.title,
+    marginBottom: 8,
   },
-  separator: {
-    height: 2,
-    backgroundColor: '#CCC',
-    marginVertical: 10,
-  },
+
   subtitle: {
-    fontSize: 14,
-    color: '#666',
+    fontSize: 18,
+    lineHeight: 25,
+    color: COLORS.text,
     marginBottom: 20,
   },
-  buttonContainer: {
-    alignItems: 'flex-end',
-    paddingHorizontal: 20,
-    marginBottom: 15,
+
+  pressed: {
+    opacity: 0.85,
   },
+
+  // Botón "Nuevo producto"
   addButton: {
-    backgroundColor: '#1C75B9',
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-    borderRadius: 5,
-  },
-  addButtonText: {
-    color: '#FFF',
-    fontWeight: 'bold',
-  },
-  listContainer: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-  },
-  card: {
-    backgroundColor: '#FFF',
-    borderRadius: 8,
-    flexDirection: 'row',
-    padding: 15,
-    marginBottom: 15,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-  },
-  imagePlaceholder: {
-    width: 80,
-    height: 80,
-    backgroundColor: '#EEE',
-    borderRadius: 5,
-    marginRight: 15,
-  },
-  cardContent: {
-    flex: 1,
-    justifyContent: 'space-between',
-  },
-  productName: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 5,
-  },
-  productCategory: {
-    fontSize: 12,
-    color: '#666',
-    marginBottom: 10,
-  },
-  cardActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    alignSelf: 'flex-start',
+    gap: 8,
+    minHeight: 48,
+    borderRadius: 24,
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: 20,
+    marginBottom: 20,
+    ...softShadow(0.2),
   },
-  stockBadge: {
-    backgroundColor: '#D32F2F',
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: 4,
+
+  addButtonText: {
+    color: COLORS.white,
+    fontSize: 16,
+    fontWeight: '700',
   },
-  stockText: {
-    color: '#FFF',
-    fontSize: 10,
-    fontWeight: 'bold',
+
+  // Tarjeta
+  card: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    backgroundColor: COLORS.card,
+    borderRadius: 28,
+    borderWidth: 1,
+    borderColor: COLORS.cardBorder,
+    padding: 14,
+    marginBottom: 14,
+    ...softShadow(0.06),
   },
-  editButton: {
-    backgroundColor: '#1C75B9',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 4,
+
+  cardBody: {
+    flex: 1,
   },
-  editButtonText: {
-    color: '#FFF',
+
+  cardCategory: {
     fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 1.5,
+    color: COLORS.cardLabel,
+  },
+
+  cardName: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: COLORS.title,
+    marginTop: 2,
+  },
+
+  cardPrice: {
+    fontSize: 15,
+    color: COLORS.text,
+    marginTop: 2,
+  },
+
+  badge: {
+    alignSelf: 'flex-start',
+    backgroundColor: COLORS.badge,
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 3,
+    marginTop: 6,
+  },
+  badgeEmpty: {
+    backgroundColor: COLORS.badgeEmpty,
+  },
+
+  badgeText: {
+    color: COLORS.primary,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  badgeTextEmpty: {
+    color: COLORS.error,
+  },
+
+  // Estados
+  loader: {
+    marginTop: 40,
+  },
+
+  empty: {
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+
+  emptyIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: 24,
+    backgroundColor: COLORS.circle,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+
+  emptyTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: COLORS.title,
+    textAlign: 'center',
+  },
+
+  emptyHint: {
+    fontSize: 15,
+    color: COLORS.text,
+    textAlign: 'center',
+    marginTop: 4,
   },
 });

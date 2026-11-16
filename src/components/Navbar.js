@@ -1,40 +1,61 @@
 import React from 'react';
-import { View, Image, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, Image, Pressable, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { FontAwesome } from '@expo/vector-icons';
+import { StatusBar } from 'expo-status-bar';
+import { ArrowLeft, User } from 'lucide-react-native';
 
-// Se usa como header de los stacks post-login (ver navigation/)
+import { COLORS as BASE_COLORS } from '../theme/colors';
+import { ASSETS } from './ScreenDecorations';
+
+const COLORS = {
+  ...BASE_COLORS,
+  header: '#0E6FA3',
+};
+
+const NAVBAR_HEIGHT = 56;
+
+// Se usa como header de todas las pantallas post-login (ver navigation/)
 export default function Navbar({ navigation }) {
   const insets = useSafeAreaInsets();
   const canGoBack = navigation.canGoBack();
 
   return (
-    <View style={[styles.navbar, { paddingTop: insets.top, height: 60 + insets.top }]}>
-      {/* Volver (o espacio vacío para mantener el logo centrado) */}
-      <View style={styles.side}>
+    <View
+      style={[
+        styles.navbar,
+        { paddingTop: insets.top, height: NAVBAR_HEIGHT + insets.top },
+      ]}
+    >
+      <StatusBar style="light" />
+
+      {/* Izquierda: volver (si hay a dónde) + logo + marca */}
+      <View style={styles.left}>
         {canGoBack && (
-          <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={10}>
-            <FontAwesome name="arrow-left" size={22} color="#FFFFFF" />
-          </TouchableOpacity>
+          <Pressable
+            onPress={() => navigation.goBack()}
+            accessibilityRole="button"
+            accessibilityLabel="Volver"
+            hitSlop={10}
+            style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}
+          >
+            <ArrowLeft size={24} color={COLORS.white} strokeWidth={2} />
+          </Pressable>
         )}
+
+        <Image source={ASSETS.logo} style={styles.logo} resizeMode="contain" />
+        <Text style={styles.brandText}>ALUMAT</Text>
       </View>
 
-      <Image
-        source={require('../../assets/isotipo.png')}
-        style={styles.logo}
-        resizeMode="contain"
-      />
-
-      {/* Perfil de usuario */}
-      <View style={[styles.side, styles.right]}>
-        <TouchableOpacity onPress={() => navigation.navigate('User')} hitSlop={10}>
-          <Image
-            source={require('../userIcon.png')}
-            style={styles.icon}
-            resizeMode="contain"
-          />
-        </TouchableOpacity>
-      </View>
+      {/* Derecha: perfil de usuario */}
+      <Pressable
+        onPress={() => navigation.navigate('User')}
+        accessibilityRole="button"
+        accessibilityLabel="Ver perfil"
+        hitSlop={10}
+        style={({ pressed }) => pressed && styles.pressed}
+      >
+        <User size={26} color={COLORS.white} strokeWidth={1.75} />
+      </Pressable>
     </View>
   );
 }
@@ -45,14 +66,35 @@ export const navbarScreenOptions = {
 
 const styles = StyleSheet.create({
   navbar: {
-    backgroundColor: '#0A72AB',
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 22,
+    justifyContent: 'space-between',
+    backgroundColor: COLORS.header,
+    paddingHorizontal: 20,
   },
-  side: { width: 28 },
-  right: { alignItems: 'flex-end' },
-  logo: { width: 42, height: 42 },
-  icon: { width: 28, height: 28 },
+
+  left: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+
+  backButton: {
+    marginRight: 4,
+  },
+
+  logo: {
+    width: 28,
+    height: 34,
+  },
+
+  brandText: {
+    color: COLORS.white,
+    fontSize: 22,
+    fontWeight: '700',
+  },
+
+  pressed: {
+    opacity: 0.85,
+  },
 });

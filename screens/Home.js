@@ -1,311 +1,330 @@
+import React, { useState } from 'react';
+import { View, Text, Pressable, StyleSheet, ScrollView } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  Alert,
-  Image,
-  ScrollView,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { StatusBar } from 'expo-status-bar'
-import { FontAwesome } from '@expo/vector-icons';
+  FileText,
+  Package,
+  ShoppingCart,
+  Archive,
+  LogOut,
+} from 'lucide-react-native';
 import { signOut } from 'firebase/auth';
+
 import { auth } from '../src/config/firebaseConfig';
-import CustomCard from '../src/components/CustomCard';
+import { COLORS as BASE_COLORS } from '../src/theme/colors';
+import { softShadow } from '../src/theme/shadows';
+import ScreenDecorations from '../src/components/ScreenDecorations';
 
-export default function Home({ navigation }) {
+// ---------------------------------------------------------------------------
+// Colores (paleta base + los propios de Home)
+// ---------------------------------------------------------------------------
+const COLORS = {
+  ...BASE_COLORS,
+  card: '#F6F6F0',
+  cardBorder: '#E3E4D6',
+  cardLabel: '#5B6578',
+  badge: '#D6E8F1',
+  iconBox: '#E6EAEA',
+};
 
-  // cerrar sesion
-  const handleLogOut = async () => {
-    try {
-      await signOut(auth);
-      // Firebase detecta el cierre de sesión
-    } catch (error) {
-      Alert.alert(
-        'Error',
-        'Hubo un problema al cerrar sesión.'
-      );
-    }
-  };
+// ---------------------------------------------------------------------------
+// Tarjetas de resumen: DATOS DE EJEMPLO.
+// TODO: reemplazar `value` (y `status` si corresponde) por consultas reales
+// (por ejemplo, conteos desde Firestore) cuando existan las colecciones.
+// Se pueden cargar en un useEffect y guardar en un estado con esta misma forma.
+// `route` es null cuando todavía no existe la pantalla en Navigation.js.
+// ---------------------------------------------------------------------------
+const SUMMARY_CARDS = [
+  {
+    key: 'boletas',
+    label: 'MIS BOLETAS',
+    value: 2,
+    status: 'Activo',
+    description: 'Pendientes en gestión',
+    Icon: FileText,
+    route: null, // TODO: no existe una ruta de boletas en Navigation.js
+  },
+  {
+    key: 'productos',
+    label: 'PRODUCTOS',
+    value: 3,
+    status: 'Activo',
+    description: 'En proceso de creación',
+    Icon: Package,
+    route: 'Products',
+  },
+  {
+    key: 'pedidos',
+    label: 'PEDIDOS',
+    value: 1,
+    status: 'Activo',
+    description: 'En preparación',
+    Icon: ShoppingCart,
+    route: null, // TODO: no existe una ruta de pedidos en Navigation.js
+  },
+  {
+    key: 'inventario',
+    label: 'INVENTARIO',
+    value: 4,
+    status: 'Activo',
+    description: 'Producto en stock bajo',
+    Icon: Archive,
+    route: null, // TODO: no existe una ruta de inventario en Navigation.js
+  },
+];
 
-  // Ir a productos
-  const irAProductos = () => {
-    navigation.navigate('Products');
-  };
+// Primer nombre del usuario para el saludo ("Nombre Apellido" → "Nombre").
+// Si no hay displayName, usa la parte del correo antes de la @.
+const getFirstName = (user) => {
+  const fromName = user?.displayName?.trim().split(/\s+/)[0];
+  if (fromName) return fromName;
 
+  const fromEmail = user?.email?.split('@')[0];
+  if (fromEmail) return fromEmail.charAt(0).toUpperCase() + fromEmail.slice(1);
+
+  return '';
+};
+
+// ---------------------------------------------------------------------------
+// Tarjeta de resumen
+// ---------------------------------------------------------------------------
+function SummaryCard({ label, value, status, description, Icon, onPress }) {
   return (
-    <SafeAreaView style={styles.screen} edges={['left', 'right', 'bottom']}>
+    <Pressable
+      style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`${label}: ${value}, ${description}`}
+    >
+      <View style={styles.cardText}>
+        <Text style={styles.cardLabel}>{label}</Text>
 
-      <StatusBar
-        style="light"
-      />
-
-      <ScrollView
-        contentContainerStyle={styles.content}
-      >
-
-        {/*bienvenida*/}
-        <Text style={styles.welcome}>
-          ¡Hola Tomas!
-        </Text>
-
-        <Text style={styles.subtitle}>
-          Aquí está tu resumen de tu jornada actual
-        </Text>
-
-        {/*tarjetas*/}
-        <View style={styles.cardsContainer}>
-
-          {/*mis boletas*/}
-          <CustomCard style={styles.card}>
-            <View style={styles.cardMainContent}>
-              <View style={styles.cardTextGroup}>
-                <Text style={styles.cardTitle}>MIS BOLETAS</Text>
-                <View style={styles.countAndTag}>
-                  <Text style={styles.cardNumber}>2</Text>
-                  <View style={styles.statusTagContainer}>
-                    <Text style={styles.statusTagText}>Activo</Text>
-                  </View>
-                </View>
-                <Text style={styles.cardDescription}>Pendientes en gestión</Text>
-              </View>
-              <View style={styles.cardIconBox}>
-                <FontAwesome name="file-text-o" size={24} color="#0A72AB" />
-              </View>
-            </View>
-          </CustomCard>
-
-          {/*productos-boton funcional*/}
-          <TouchableOpacity
-            style={styles.cardButton}
-            activeOpacity={0.8}
-            onPress={irAProductos}
-          >
-            <CustomCard style={styles.cardTouchable}>
-              <View style={styles.cardMainContent}>
-                <View style={styles.cardTextGroup}>
-                  <Text style={styles.cardTitle}>PRODUCTOS</Text>
-                  <View style={styles.countAndTag}>
-                    <Text style={styles.cardNumber}>3</Text>
-                    <View style={styles.statusTagContainer}>
-                      <Text style={styles.statusTagText}>Activo</Text>
-                    </View>
-                  </View>
-                  <Text style={styles.cardDescription}>En proceso de creación</Text>
-                </View>
-                <View style={styles.cardIconBox}>
-                  <FontAwesome name="cube" size={24} color="#0A72AB" />
-                </View>
-              </View>
-            </CustomCard>
-          </TouchableOpacity>
-
-          {/*pedidos*/}
-          <CustomCard style={styles.card}>
-            <View style={styles.cardMainContent}>
-              <View style={styles.cardTextGroup}>
-                <Text style={styles.cardTitle}>PEDIDOS</Text>
-                <View style={styles.countAndTag}>
-                  <Text style={styles.cardNumber}>1</Text>
-                  <View style={styles.statusTagContainer}>
-                    <Text style={styles.statusTagText}>Activo</Text>
-                  </View>
-                </View>
-                <Text style={styles.cardDescription}>En preparación</Text>
-              </View>
-              <View style={styles.cardIconBox}>
-                <FontAwesome name="shopping-cart" size={24} color="#0A72AB" />
-              </View>
-            </View>
-          </CustomCard>
-
-          {/*inventario*/}
-          <CustomCard style={styles.card}>
-            <View style={styles.cardMainContent}>
-              <View style={styles.cardTextGroup}>
-                <Text style={styles.cardTitle}>INVENTARIO</Text>
-                <View style={styles.countAndTag}>
-                  <Text style={styles.cardNumber}>4</Text>
-                  <View style={styles.statusTagContainer}>
-                    <Text style={styles.statusTagText}>Activo</Text>
-                  </View>
-                </View>
-                <Text style={styles.cardDescription}>Producto en stock bajo</Text>
-              </View>
-              <View style={styles.cardIconBox}>
-                <FontAwesome name="archive" size={24} color="#0A72AB" />
-              </View>
-            </View>
-          </CustomCard>
-
+        <View style={styles.cardValueRow}>
+          <Text style={styles.cardValue}>{value}</Text>
+          <View style={styles.badge}>
+            <Text style={styles.badgeText}>{status}</Text>
+          </View>
         </View>
 
-        {/*cerrar sesion*/}
-        <TouchableOpacity
-          style={styles.logoutButton}
-          onPress={handleLogOut}
-        >
-          <FontAwesome
-            name="sign-out"
-            size={18}
-            color="#706F8A"
-          />
+        <Text style={styles.cardDescription}>{description}</Text>
+      </View>
 
-          <Text style={styles.logoutText}>
-            Cerrar sesión
-          </Text>
-        </TouchableOpacity>
-
-      </ScrollView>
-    </SafeAreaView>
+      <View style={styles.cardIconBox}>
+        <Icon size={34} color={COLORS.title} strokeWidth={1.75} />
+      </View>
+    </Pressable>
   );
 }
 
+export default function Home({ navigation }) {
+  const insets = useSafeAreaInsets();
+
+  const [logoutError, setLogoutError] = useState('');
+
+  const firstName = getFirstName(auth?.currentUser);
+  const greeting = firstName ? `¡Hola, ${firstName}!` : '¡Hola!';
+
+  // Cerrar sesión: la app reacciona con onAuthStateChanged y vuelve al Login
+  const handleLogOut = async () => {
+    if (!auth) return;
+
+    setLogoutError('');
+    try {
+      await signOut(auth);
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error.code);
+      setLogoutError('No se pudo cerrar sesión. Intentá nuevamente.');
+    }
+  };
+
+  const handleCardPress = (card) => {
+    if (card.route) {
+      navigation.navigate(card.route);
+    }
+    // TODO: las tarjetas sin `route` no navegan hasta que exista su pantalla
+  };
+
+  return (
+    <View style={styles.screen}>
+      {/* Decoraciones de fondo: debajo del contenido (el Navbar queda fuera de esta vista) */}
+      <ScreenDecorations
+        dotsTop={0.04}
+        dotsRight={0.06}
+        dotsBottom={0.04}
+        dotsLeft={0.06}
+      />
+
+      <ScrollView
+        style={styles.flex}
+        contentContainerStyle={[
+          styles.content,
+          { paddingBottom: insets.bottom + 56 },
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.inner}>
+          {/* Saludo */}
+          <Text style={styles.title}>{greeting}</Text>
+          <Text style={styles.subtitle}>Aquí está tu resumen de la jornada actual</Text>
+
+          {/* Tarjetas de resumen */}
+          {SUMMARY_CARDS.map((card) => (
+            <SummaryCard
+              key={card.key}
+              label={card.label}
+              value={card.value}
+              status={card.status}
+              description={card.description}
+              Icon={card.Icon}
+              onPress={() => handleCardPress(card)}
+            />
+          ))}
+
+          {/* Cerrar sesión */}
+          <Pressable
+            style={({ pressed }) => [styles.logout, pressed && styles.cardPressed]}
+            onPress={handleLogOut}
+            accessibilityRole="button"
+          >
+            <LogOut size={22} color={COLORS.text} strokeWidth={1.75} />
+            <Text style={styles.logoutText}>Cerrar sesión</Text>
+          </Pressable>
+
+          {logoutError ? <Text style={styles.errorText}>{logoutError}</Text> : null}
+        </View>
+      </ScrollView>
+    </View>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Estilos
+// ---------------------------------------------------------------------------
 const styles = StyleSheet.create({
+  flex: {
+    flex: 1,
+  },
 
   screen: {
     flex: 1,
-    backgroundColor: '#E7E7D8',
+    backgroundColor: COLORS.background,
   },
 
-  header: {
-    backgroundColor: '#0A72AB',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 22,
-    paddingVertical: 10,
-  },
-
-  logo: {
-    width: 55,
-    height: 55,
-  },
-
-  headerIcons: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-
-  headerIconButton: {
-    marginLeft: 18,
-  },
-
+  // Contenido
   content: {
-    paddingHorizontal: 20,
-    paddingTop: 35,
-    paddingBottom: 30,
+    paddingHorizontal: 24,
+    paddingTop: 32,
   },
 
-  welcome: {
-    fontSize: 25,
-    fontWeight: 'bold',
-    color: '#4D5061',
+  inner: {
+    width: '100%',
+    maxWidth: 520,
+    alignSelf: 'center',
+  },
+
+  title: {
+    fontSize: 32,
+    fontWeight: '800',
+    color: COLORS.title,
+    marginBottom: 8,
   },
 
   subtitle: {
-    fontSize: 13,
-    color: '#706F8A',
-    marginTop: 8,
-    marginBottom: 30,
+    fontSize: 18,
+    lineHeight: 25,
+    color: COLORS.text,
+    marginBottom: 28,
   },
 
-  cardsContainer: {
-    width: '100%',
-  },
-
+  // Tarjeta
   card: {
-    width: '100%',
-    padding: 16,
-    marginVertical: 6,
-    borderRadius: 12,
-  },
-
-  cardButton: {
-    width: '100%',
-    marginVertical: 6,
-  },
-
-  cardTouchable: {
-    width: '100%',
-    padding: 16,
-    marginVertical: 0,
-    borderRadius: 12,
-  },
-
-  cardMainContent: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    backgroundColor: COLORS.card,
+    borderRadius: 28,
+    borderWidth: 1,
+    borderColor: COLORS.cardBorder,
+    padding: 20,
+    marginBottom: 16,
+    ...softShadow(0.06),
   },
 
-  cardTextGroup: {
+  cardPressed: {
+    opacity: 0.85,
+  },
+
+  cardText: {
     flex: 1,
   },
 
-  cardTitle: {
-    fontSize: 11,
-    fontWeight: 'bold',
-    color: '#706F8A',
-    letterSpacing: 0.5,
-    marginBottom: 4,
+  cardLabel: {
+    fontSize: 13,
+    fontWeight: '700',
+    letterSpacing: 1.5,
+    color: COLORS.cardLabel,
   },
 
-  countAndTag: {
+  cardValueRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 2,
+    gap: 12,
+    marginVertical: 2,
   },
 
-  cardNumber: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#1E1E1E',
-    marginRight: 10,
+  cardValue: {
+    fontSize: 44,
+    fontWeight: '800',
+    color: COLORS.title,
   },
 
-  statusTagContainer: {
-    backgroundColor: '#D6EAF3',
+  badge: {
+    backgroundColor: COLORS.badge,
     borderRadius: 20,
-    paddingHorizontal: 10,
-    paddingVertical: 2,
+    paddingHorizontal: 14,
+    paddingVertical: 4,
   },
 
-  statusTagText: {
-    color: '#0A72AB',
-    fontSize: 10,
-    fontWeight: 'bold',
+  badgeText: {
+    color: COLORS.primary,
+    fontSize: 14,
+    fontWeight: '600',
   },
 
   cardDescription: {
-    fontSize: 12,
-    color: '#706F8A',
+    fontSize: 16,
+    color: COLORS.text,
   },
 
   cardIconBox: {
-    backgroundColor: '#E2EFF6',
-    borderRadius: 10,
-    width: 55,
-    height: 55,
-    justifyContent: 'center',
+    width: 72,
+    height: 72,
+    borderRadius: 20,
+    backgroundColor: COLORS.iconBox,
     alignItems: 'center',
-    marginLeft: 10,
+    justifyContent: 'center',
+    marginLeft: 12,
   },
 
-  logoutButton: {
+  // Cerrar sesión
+  logout: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 35,
+    alignSelf: 'center',
     gap: 10,
+    marginTop: 24,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
   },
 
   logoutText: {
-    color: '#706F8A',
-    fontSize: 14,
+    fontSize: 18,
+    color: COLORS.text,
   },
 
+  errorText: {
+    color: COLORS.error,
+    fontSize: 12,
+    textAlign: 'center',
+    marginTop: 6,
+  },
 });
-
-

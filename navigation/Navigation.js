@@ -6,6 +6,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { auth, isFirebaseConfigured } from '../src/config/firebaseConfig';
 import Login from '../screens/Login';
 import SignUp from '../screens/SignUp';
+import ForgotPassword from '../screens/ForgotPassword';
 import Home from '../screens/Home';
 import ProductsStack from './ProductsStack';
 import UserStack from './UserStack';
@@ -67,10 +68,16 @@ export default function Navigation() {
               component={Login}
               options={{ headerShown: false }}
             />
-            
+
             <Stack.Screen
               name="SignUp"
               component={SignUp}
+              options={{ headerShown: false }}
+            />
+
+            <Stack.Screen
+              name="ForgotPassword"
+              component={ForgotPassword}
               options={{ headerShown: false }}
             />
           </>
