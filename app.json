@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "login-signup",
-    "slug": "login-signup",
+    "name": "ALUMAT",
+    "slug": "alumat",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -22,7 +22,21 @@
     },
     "plugins": [
       "expo-status-bar",
-      "expo-font"
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/icon.png",
+          "imageWidth": 160,
+          "backgroundColor": "#0B2A4F"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "ALUMAT necesita acceso a tus fotos para cargar imágenes de productos y tu foto de perfil."
+        }
+      ]
     ]
   }
 }

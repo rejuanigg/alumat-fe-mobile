@@ -5,13 +5,17 @@ services:
     ports:
       - "8081:8081"
     env_file:
-      - .env
+      - path: .env
+        required: false
     volumes:
       - .:/app
       - node_modules:/app/node_modules
     environment:
       EXPO_NO_TELEMETRY: "1"
       CHOKIDAR_USEPOLLING: "true"
+    # El volumen node_modules sobrevive entre builds: se sincroniza con package-lock.json al arrancar
+    # para que no queden dependencias viejas cuando cambian las del proyecto.
+    command: sh -c "npm install --no-audit --no-fund && npx expo start --tunnel ngrok --port 8081"
     stdin_open: true
     tty: true
 
