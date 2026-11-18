@@ -41,7 +41,8 @@ export function Button({
       accessibilityRole="button"
       accessibilityLabel={title}
       accessibilityHint={accessibilityHint}
-      accessibilityState={{ disabled: inactive, busy: loading }}
+      aria-disabled={inactive}
+      aria-busy={loading}
       style={({ pressed }) => [
         styles.base,
         { backgroundColor: p.bg, height: large ? sizes.buttonLarge : sizes.field },

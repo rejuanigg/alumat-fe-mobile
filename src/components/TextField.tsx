@@ -8,11 +8,10 @@ import {
   type StyleProp,
   type TextInputInstance,
   type TextInputProps,
-  type TextStyle,
   type ViewStyle,
 } from 'react-native';
 
-import { colors, fonts, radii, sizes, type } from '../theme/tokens';
+import { colors, fonts, radii, sizes, type, webNoOutline } from '../theme/tokens';
 
 export type TextFieldProps = Omit<TextInputProps, 'style' | 'placeholderTextColor' | 'selectionColor'> & {
   label: string;
@@ -90,10 +89,6 @@ export function TextField({
     </View>
   );
 }
-
-// En web el navegador dibuja su propio anillo de foco; usamos el contorno azul del contenedor.
-// Los tipos de RN no incluyen `outlineStyle: 'none'`, que sí acepta react-native-web.
-const webNoOutline = { outlineStyle: 'none' } as unknown as TextStyle;
 
 const styles = StyleSheet.create({
   container: { gap: 6 },

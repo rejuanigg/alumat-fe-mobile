@@ -80,4 +80,10 @@ export const type = {
   logo: { fontFamily: fonts.extrabold, fontSize: 18, letterSpacing: 1.3 },
 } as const satisfies Record<string, TextStyle>;
 
+/**
+ * En web el navegador dibuja su propio anillo de foco en los inputs; usamos el contorno azul propio.
+ * Los tipos de RN no incluyen `outlineStyle: 'none'`, que sí acepta react-native-web.
+ */
+export const webNoOutline = { outlineStyle: 'none' } as unknown as TextStyle;
+
 export const theme = { colors, fonts, spacing, radii, sizes, type } as const;

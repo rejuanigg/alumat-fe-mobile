@@ -1,127 +1,120 @@
-# Login y SignUp — proyecto para alumnos
+# ALUMAT — app móvil
 
-Proyecto Expo en JavaScript para practicar registro, inicio y cierre de sesión con Firebase Authentication. Las credenciales están vacías para que cada alumno conecte su propio proyecto Firebase.
+App de **ALUMAT** (fábrica de aberturas) hecha con **Expo + TypeScript**. Incluye:
+
+1. Autenticación: login, registro, olvidé mi contraseña, código, nueva contraseña y pantalla "Listo".
+2. Perfil y edición de perfil (con foto).
+3. CRUD de **Productos** (listar, buscar, crear, editar, eliminar) con imagen.
+4. Inicio con bienvenida, cifras del catálogo y accesos.
+
+El backend está **simulado en memoria** (ver [Datos simulados](#datos-simulados-en-memoria)): no hace falta configurar ningún servicio externo.
 
 ## Requisitos
 
-- Node.js 22 LTS. Expo SDK 57 requiere Node.js 22.13 o posterior.
-- npm, incluido con Node.js.
-- Expo Go actualizado en el teléfono.
-- Una cuenta de Firebase.
-
-Para comprobar la instalación en CMD o PowerShell:
+- Node.js 22 LTS o posterior y npm.
+- Expo Go actualizado en el teléfono (SDK 58).
 
 ```text
 node -v
 npm -v
 ```
 
-## 1. Preparar el proyecto
-
-1. Descomprimir el ZIP.
-2. Abrir la carpeta `login-signup-alumnos` en Visual Studio Code.
-3. Abrir una terminal dentro de esa carpeta.
-4. Instalar exactamente las dependencias registradas en `package-lock.json`:
+## Cómo correr la app
 
 ```text
 npm ci
+npx expo start
 ```
 
-Si `npm ci` indica que faltan archivos o que el lockfile no coincide, usar `npm install`.
+La computadora y el teléfono tienen que estar en la misma red Wi-Fi. Cuando aparezca el código QR, escanealo con Expo Go (Android) o con la cámara (iOS).
 
-## 2. Crear y configurar Firebase
+- **Web:** `npx expo start --web` (o presioná `w` con Expo abierto).
+- **El QR no conecta:** `npx expo start --tunnel` (Expo ofrece instalar `@expo/ngrok` la primera vez).
+- **Cambios que no aparecen o error de caché:** `npx expo start -c`.
 
-1. Crear un proyecto en <https://console.firebase.google.com/>.
-2. En la descripción general, pulsar **Agregar app** y elegir Web `</>`.
-3. Escribir un alias. No es necesario habilitar Firebase Hosting.
-4. Registrar la aplicación y conservar el objeto `firebaseConfig`.
-5. Entrar en **Authentication > Método de acceso**.
-6. Agregar y habilitar **Correo electrónico/contraseña**.
-
-## 3. Agregar la configuración Firebase
-
-En CMD de Windows:
-
-```text
-copy .env.example .env
-```
-
-En PowerShell:
-
-```powershell
-Copy-Item .env.example .env
-```
-
-Abrir `.env` y completar los seis valores de `firebaseConfig`:
-
-```dotenv
-EXPO_PUBLIC_FIREBASE_API_KEY=
-EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=
-EXPO_PUBLIC_FIREBASE_PROJECT_ID=
-EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET=
-EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
-EXPO_PUBLIC_FIREBASE_APP_ID=
-```
-
-Copiar los valores exactamente y respetar mayúsculas y minúsculas. No agregar comillas, comas ni punto y coma. `.env` está excluido de Git.
-
-## 4. Ejecutar la aplicación
-
-```text
-npm start
-```
-
-La computadora y el teléfono deben estar conectados a la misma red Wi-Fi. Cuando aparezca el código QR, abrir Expo Go y escanearlo.
-
-Si el teléfono no logra conectarse por la red local, detener Expo con `Ctrl+C` y utilizar el túnel:
-
-```text
-npm run start:tunnel
-```
-
-Para detener el servidor, presionar `Ctrl+C`.
-
-## 5. Prueba funcional
-
-1. Registrar un usuario con nombre, apellido, correo y contraseña.
-2. La contraseña debe tener al menos seis caracteres, una mayúscula, una minúscula y un número; por ejemplo, `Prueba123`.
-3. Confirmar que aparece **Inicio**.
-4. Comprobar el usuario en **Firebase > Authentication > Usuarios**.
-5. Cerrar sesión e iniciar sesión con la misma cuenta.
-6. Cerrar y volver a abrir Expo Go para comprobar que la sesión se conserva.
-
-## Soluciones rápidas
-
-- **Falta configurar Firebase:** revisar que exista `.env` y que sus seis valores estén completos.
-- **Clave API no válida:** copiar `apiKey` otra vez y respetar mayúsculas y minúsculas.
-- **El QR no conecta:** ejecutar `npm run start:tunnel`.
-- **Error de caché o cambios que no aparecen:** ejecutar `npx expo start -c`.
-- **Puerto ocupado:** cerrar otra instancia de Expo o aceptar el puerto alternativo propuesto.
-
-## Docker opcional
-
-Los archivos `Dockerfile` y `compose.yaml` permiten ejecutar el mismo proyecto con Docker, pero no son necesarios para el procedimiento anterior:
+### Con Docker (opcional)
 
 ```text
 docker compose up --build
 ```
 
-## Estructura principal
+El contenedor sincroniza `node_modules` con `package-lock.json` al arrancar y levanta Expo con túnel. Para ver el QR: `docker compose logs -f expo`. Para frenarlo: `docker compose down`.
+
+### Chequeos
 
 ```text
-login-signup-alumnos/
-├── assets/logo.png
-├── docs/
-├── navigation/Navigation.js
-├── screens/
-│   ├── Home.js
-│   ├── Login.js
-│   └── SignUp.js
-├── src/config/firebaseConfig.js
-├── .env.example
-├── App.js
-├── package-lock.json
-└── package.json
+npm run typecheck   # tsc --noEmit
+npm run lint        # ESLint (config de Expo)
 ```
 
-Si falta `.env` o algún valor, la aplicación muestra un aviso en lugar de iniciar Firebase con una configuración incompleta.
+## Usuario de prueba
+
+| Correo | Contraseña |
+|---|---|
+| `romina@alumat.com` | `Alumat2024` |
+
+En "Olvidé mi contraseña" el código de verificación es siempre **`123456`**.
+
+## Datos simulados en memoria
+
+Todo vive en `src/services/db.ts` y **se pierde al recargar la app**:
+
+| Qué | Dónde | Comportamiento actual |
+|---|---|---|
+| Usuarios y contraseñas | `db.users` | Romina Flores precargada; los registros nuevos se agregan a la lista. Las contraseñas se guardan en texto plano (solo para la demo). |
+| Sesión | `AuthContext` | Solo en memoria: al cerrar la app hay que volver a iniciar sesión. |
+| "Recordarme" | `db.rememberedEmail` | Precarga el correo en el Login mientras la app siga abierta. |
+| Código de recuperación | `authService` (`DEMO_RESET_CODE`) | Siempre `123456`; no se envía ningún correo. |
+| Productos | `db.products` | Los 5 productos de ejemplo; crear, editar y eliminar modifican la lista. |
+| Imágenes (producto y perfil) | campos `imageUri` / `photoUri` | Se guarda la URI local del archivo elegido; no se sube a ningún servidor. |
+| Latencia | `delay()` | Cada llamada espera 200–350 ms para simular la red. |
+
+## Cómo conectarla a una API real
+
+Las pantallas no tocan `db` directamente: solo usan los métodos **async** de tres servicios. Para pasar a una API alcanza con reescribir el cuerpo de esos métodos manteniendo las mismas firmas.
+
+| Servicio | Métodos | Endpoint sugerido |
+|---|---|---|
+| `authService` | `login`, `register`, `requestPasswordReset`, `verifyResetCode`, `resetPassword`, `getRememberedEmail` | `POST /auth/login`, `POST /auth/register`, `POST /auth/forgot`, `POST /auth/verify-code`, `POST /auth/reset` |
+| `productService` | `list`, `create`, `update`, `remove` | `GET/POST /products`, `PUT/DELETE /products/:id` |
+| `profileService` | `update` | `PUT /users/:id` |
+
+Ejemplo para `productService.list`:
+
+```ts
+const API_URL = process.env.EXPO_PUBLIC_API_URL;
+
+async list(): Promise<Product[]> {
+  const res = await fetch(`${API_URL}/products`, { headers: { Authorization: `Bearer ${token}` } });
+  if (!res.ok) throw new ServiceError('http_error', 'No pudimos cargar los productos.');
+  return (await res.json()) as Product[];
+}
+```
+
+Pasos:
+
+1. Definir `EXPO_PUBLIC_API_URL` en `.env`.
+2. **Errores:** cuando la API responda con un error, lanzar `ServiceError(code, mensaje)`. Las pantallas ya muestran `mensaje` en un banner (por ejemplo, credenciales inválidas o correo ya registrado).
+3. **Sesión:** hacer que `login` devuelva también el token, guardarlo en `AuthContext` y persistirlo con `expo-secure-store` para que la sesión sobreviva al cerrar la app. Al iniciar, leerlo y, si es válido, entrar directo a las pestañas.
+4. **Imágenes:** antes de `create`/`update` (o de `profileService.update`), subir el archivo con `FormData` (multipart) y guardar en `imageUri`/`photoUri` la URL que devuelva el servidor. Las validaciones de formato y tamaño (`src/utils/imagePicker.ts`) siguen sirviendo del lado del cliente.
+5. Borrar `src/services/db.ts` y `DEMO_RESET_CODE` cuando ya no se usen.
+
+El estado de la app (`AuthContext`, `ProductsContext`) no cambia: sigue llamando a los mismos métodos.
+
+## Estructura
+
+```text
+├── App.tsx                 fuentes Figtree, providers y navegación
+├── assets/                 icon.png (logo ALUMAT), edificio.png (foto del login)
+└── src/
+    ├── theme/tokens.ts     colores, tipografía, espaciado, radios y medidas
+    ├── components/         Hero, Wave, Panes, TextField, PasswordField, Button, OtpInput,
+    │                       SelectField, ImagePickerField, ConfirmSheet, TabBar, Logo, Banner…
+    ├── navigation/         RootNavigator, AuthStack, AppTabs, ProductosStack, PerfilStack
+    ├── screens/auth/       Login, Registro, Olvide, Codigo, Nueva, Listo
+    ├── screens/            Inicio, Productos, ProductoForm, Perfil, EditarPerfil
+    ├── context/            AuthContext, ProductsContext (Context + useReducer)
+    ├── hooks/useForm.ts    validación al salir del campo y al enviar, foco al primer error
+    ├── services/           authService, productService, profileService, db (en memoria)
+    └── utils/              validators, format (precios es-AR, fechas), imagePicker
+```

@@ -22,7 +22,7 @@ export const db: {
       email: 'romina@alumat.com',
       phone: '+54 9 11 5555 5555',
       role: 'Administradora',
-      memberSince: '2024-03-01T00:00:00.000Z',
+      memberSince: '2024-03-15T12:00:00.000Z',
       photoUri: null,
       password: 'Alumat2024',
     },

@@ -45,18 +45,20 @@ export function useForm<T extends Values>(initial: T, rules: FieldRules<T>) {
   const validateAll = useCallback((): boolean => {
     const all = valuesRef.current;
     const next: FormErrors<T> = {};
-    let first: keyof T | undefined;
+    let first: keyof T | undefined; // primer campo con error que puede recibir foco
+    let invalid = false;
     for (const key of Object.keys(all) as (keyof T)[]) {
       const msg = check(key, all);
       if (msg) {
         next[key] = msg;
         hadError.current.add(key);
-        first ??= key;
+        if (first === undefined && refs.current[key]) first = key;
+        invalid = true;
       }
     }
     setErrors(next);
     if (first !== undefined) refs.current[first]?.focus();
-    return first === undefined;
+    return !invalid;
   }, [check]);
 
   const register = useCallback(

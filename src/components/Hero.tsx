@@ -13,6 +13,8 @@ type Props = {
   height: number;
   title?: string;
   onBack?: () => void;
+  /** Reemplaza la flecha de volver en la esquina superior izquierda. */
+  left?: ReactNode;
   /** Reemplaza al logo en la esquina superior derecha. */
   right?: ReactNode;
   showLogo?: boolean;
@@ -30,6 +32,7 @@ export function Hero({
   height,
   title,
   onBack,
+  left,
   right,
   showLogo = true,
   children,
@@ -45,11 +48,12 @@ export function Hero({
     <View style={[styles.hero, { minHeight: total, paddingTop: insets.top + spacing.xs }]}>
       <Panes width={width} height={total} />
       <View style={styles.topBar}>
-        {onBack ? (
-          <IconButton icon="back" label="Volver" onPress={onBack} color={colors.white} iconSize={24} />
-        ) : (
-          <View style={styles.spacer} />
-        )}
+        {left ??
+          (onBack ? (
+            <IconButton icon="back" label="Volver" onPress={onBack} color={colors.white} iconSize={24} />
+          ) : (
+            <View style={styles.spacer} />
+          ))}
         {right ?? (showLogo ? <Logo inverted /> : null)}
       </View>
       <View style={[styles.content, { paddingBottom: bottomSpace }]}>
@@ -68,14 +72,13 @@ export function Hero({
 const styles = StyleSheet.create({
   hero: {
     backgroundColor: colors.navy,
-    overflow: 'visible',
-    zIndex: 1,
   },
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingLeft: spacing.xs,
+    gap: spacing.sm,
     paddingRight: spacing.lg,
     minHeight: 44,
   },
