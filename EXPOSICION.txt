@@ -1,0 +1,490 @@
+==============================================================================
+  ALUMAT — APP MÓVIL DE GESTIÓN
+  Guion de exposición del sistema
+==============================================================================
+
+
+------------------------------------------------------------------------------
+1. INTRODUCCIÓN
+------------------------------------------------------------------------------
+
+ALUMAT es una aplicación móvil pensada para una fábrica de aberturas
+(ventanas, puertas, persianas y accesorios). Permite que el personal:
+
+  1) Se autentique de forma segura (registro, login, recuperar contraseña).
+  2) Administre su perfil, con foto.
+  3) Gestione el catálogo de productos: listar, buscar, crear, editar y
+     eliminar, con imagen.
+  4) Vea un panel de inicio con un resumen del catálogo.
+
+Está desarrollada con Expo + React Native + TypeScript, por lo que el mismo
+código corre en Android, iOS y navegador web.
+
+Dato clave para la exposición: el backend es FIREBASE (Google). La
+autenticación la maneja Firebase Authentication y los datos (perfiles y
+productos) viven en Cloud Firestore, así que son REALES y persistentes. La
+app está diseñada en capas: las pantallas solo hablan con "servicios", de
+modo que si algún día se cambia Firebase por otra API, solo se reescribe esa
+capa.
+
+
+------------------------------------------------------------------------------
+2. TECNOLOGÍAS UTILIZADAS
+------------------------------------------------------------------------------
+
+  - Expo (SDK 58): plataforma que simplifica crear y ejecutar apps React
+    Native. Se prueba escaneando un QR con la app Expo Go.
+  - React Native 0.88 + React 19: construcción de la interfaz con
+    componentes.
+  - TypeScript: lenguaje con tipos; detecta errores antes de ejecutar.
+  - React Navigation: navegación entre pantallas (stacks y pestañas).
+  - Context + useReducer: manejo del estado global (sesión y productos).
+  - Firebase Authentication: cuentas de usuario y recuperación de contraseña
+    por correo.
+  - Cloud Firestore: base de datos en la nube (perfiles y productos), con
+    sincronización en tiempo real.
+  - AsyncStorage: guarda en el teléfono la sesión ("Recordarme").
+  - expo-image-picker / expo-file-system / expo-image-manipulator: elegir
+    imágenes de la galería, medir su tamaño y comprimirlas.
+  - react-native-svg: dibujo de íconos, logo y ondas decorativas.
+  - Figtree (Google Fonts): tipografía de toda la app.
+  - Docker (opcional): para levantar el entorno sin instalar nada local.
+  - ESLint + tsc: chequeo de calidad y de tipos (npm run lint / typecheck).
+
+
+------------------------------------------------------------------------------
+3. ARQUITECTURA GENERAL (VISTA DE PÁJARO)
+------------------------------------------------------------------------------
+
+La app está organizada en CAPAS, cada una con una responsabilidad única:
+
+    +-----------------------------------------------------------+
+    |  PANTALLAS (screens)        lo que ve y toca el usuario   |
+    +-----------------------------------------------------------+
+    |  COMPONENTES (components)   piezas visuales reutilizables |
+    +-----------------------------------------------------------+
+    |  NAVEGACIÓN (navigation)    qué pantalla se muestra cuándo|
+    +-----------------------------------------------------------+
+    |  ESTADO (context)           sesión y lista de productos   |
+    +-----------------------------------------------------------+
+    |  SERVICIOS (services)       acceso a datos (auth, product,|
+    |                             profile)                      |
+    +-----------------------------------------------------------+
+    |  FIREBASE                   Authentication + Firestore    |
+    |                             (en la nube de Google)        |
+    +-----------------------------------------------------------+
+
+Regla de oro: las pantallas NUNCA tocan la base de datos directamente.
+Siempre pasan por un servicio. Esa es la decisión de diseño más importante
+del proyecto: aísla a la app del proveedor de backend.
+
+Estructura de carpetas:
+
+  App.tsx               Punto de entrada: carga fuentes y monta todo.
+  src/theme/            Colores, tipografías, espaciados (design tokens).
+  src/components/       Botones, campos de texto, tarjetas, íconos, etc.
+  src/navigation/       Los navegadores (login, pestañas, etc.).
+  src/screens/          Las pantallas de la app.
+  src/context/          Estado global: AuthContext y ProductsContext.
+  src/hooks/useForm.ts  Lógica reutilizable de formularios.
+  src/services/         firebase (configuración), authService,
+                        productService, profileService, userDoc y
+                        firebaseErrors (traduce errores a español).
+  firestore.rules       Reglas de seguridad de la base de datos.
+  src/utils/            Validadores, formato de precios/fechas, selector de
+                        imágenes.
+
+
+------------------------------------------------------------------------------
+4. ARRANQUE DE LA APLICACIÓN
+------------------------------------------------------------------------------
+
+Archivo: App.tsx
+
+Al abrir la app ocurre, en orden:
+
+  1) Se mantiene visible la pantalla de bienvenida (splash) del sistema.
+  2) Se cargan las 5 variantes de la fuente Figtree.
+  3) Cuando las fuentes están listas, se oculta el splash.
+  4) Se montan tres envoltorios:
+       SafeAreaProvider -> respeta notch y barras del teléfono.
+       AuthProvider     -> guarda quién tiene la sesión iniciada y, al
+                           abrir la app, intenta retomar la sesión guardada.
+       RootNavigator    -> decide qué pantallas mostrar.
+
+Por qué importa: evita el "parpadeo" de texto con otra tipografía.
+
+
+------------------------------------------------------------------------------
+5. NAVEGACIÓN: EL CORAZÓN DE LA LÓGICA
+------------------------------------------------------------------------------
+
+Archivo: src/navigation/RootNavigator.tsx
+
+La navegación se decide con tres estados:
+
+      cargando (recuperando la sesión)  ->  fondo azul de marca
+      hay usuario con sesión            ->  AppTabs   (zona privada)
+      NO hay usuario                    ->  AuthStack (zona pública)
+
+Mientras Firebase recupera la sesión guardada se muestra solo el fondo azul,
+para que no se vea un "flash" del login antes de entrar a la app.
+
+No hay que "redirigir" manualmente al iniciar o cerrar sesión: al cambiar el
+usuario en el contexto, React cambia de árbol de pantallas automáticamente y
+descarta el anterior. Un usuario sin sesión no tiene forma de llegar a una
+pantalla privada, porque esas pantallas directamente no existen en su árbol.
+
+5.1 AuthStack (zona pública) — navegación tipo pila
+    Login -> Registro -> Listo
+    Login -> Olvidé mi contraseña -> Enviado (revisá tu correo)
+    (La pantalla "Listo" bloquea el gesto de volver atrás.)
+
+5.2 AppTabs (zona privada) — barra de pestañas inferior
+    - Inicio
+    - Productos   (es una pila: lista -> formulario de producto)
+    - Perfil      (es una pila: perfil -> editar perfil)
+
+    La barra inferior es un componente propio (TabBar) con diseño a medida.
+
+5.3 Tipado de la navegación (navigation/types.ts)
+    Cada pantalla declara qué parámetros recibe. Ejemplo: "Enviado" recibe
+    el email. Si alguien navega sin enviar un parámetro obligatorio,
+    TypeScript marca el error al programar.
+
+
+------------------------------------------------------------------------------
+6. ESTADO GLOBAL
+------------------------------------------------------------------------------
+
+Se usa el patrón Context + useReducer (sin librerías externas).
+
+6.1 AuthContext (src/context/AuthContext.tsx)
+    Guarda el estado de la sesión (cargando / sin sesión / con sesión) y el
+    usuario actual. Ofrece:
+      - user, status   quién está logueado y en qué estado está la sesión
+      - signIn()       llama al servicio de login; si sale bien, guarda al
+                       usuario
+      - signOut()      cierra la sesión en Firebase y deja user en null ->
+                       la app vuelve al login sola
+      - updateUser()   actualiza los datos tras editar el perfil
+    Al montarse, intenta restaurar la sesión guardada (restoreSession) y se
+    suscribe a Firebase para enterarse si la sesión se cierra desde afuera
+    (por ejemplo, cuenta deshabilitada). Un reducer con 3 acciones (signIn,
+    update, signOut) hace los cambios de forma predecible.
+
+6.2 ProductsContext (src/context/ProductsContext.tsx)
+    Solo existe dentro de la zona privada. Al montarse:
+      - Carga los 5 productos de ejemplo si es la primera vez que se usa el
+        sistema.
+      - Se SUSCRIBE a la colección de productos de Firestore: cada vez que
+        alguien crea, edita o elimina un producto, la lista se actualiza sola
+        (tiempo real). Si dos personas usan la app a la vez, ven el mismo
+        catálogo al instante.
+    Ofrece create(), update() y remove(), y guarda también un posible error
+    de carga para mostrarlo. Así Inicio, Productos y el Formulario ven
+    siempre los mismos datos.
+    También define la regla de negocio de "stock bajo": 5 unidades o menos.
+
+
+------------------------------------------------------------------------------
+7. CAPA DE SERVICIOS Y FIREBASE
+------------------------------------------------------------------------------
+
+7.1 firebase.ts — la conexión
+    Lee las credenciales del archivo .env (variables EXPO_PUBLIC_FIREBASE_*)
+    y inicializa Firebase. Si falta alguna, la app no arranca y avisa cuál.
+    En el teléfono la sesión se guarda con AsyncStorage para que sobreviva al
+    cerrar la app; en web se usa el almacenamiento del navegador. Además
+    configura los correos de Firebase en español.
+
+7.2 authService
+    - login: inicia sesión con correo y contraseña en Firebase y carga el
+      perfil desde Firestore (colección users, documento = id del usuario).
+      Guarda si se marcó "Recordarme".
+    - restoreSession: al abrir la app, si había sesión y se marcó
+      "Recordarme", entra directo; si no, la cierra.
+    - register: crea la cuenta en Firebase Authentication y el perfil en
+      Firestore con rol "Vendedor". Usa una segunda instancia de Firebase
+      para que crear la cuenta NO inicie sesión sola: el flujo es Registro ->
+      Listo -> Login. Si falla el guardado del perfil, borra la cuenta recién
+      creada para que el correo no quede bloqueado.
+    - requestPasswordReset: Firebase envía un CORREO REAL con un enlace para
+      elegir la contraseña nueva.
+    - logout y getRememberedEmail.
+
+7.3 productService
+    - subscribe: escucha el catálogo en tiempo real (onSnapshot).
+    - ensureSeed: carga los productos de ejemplo una sola vez (queda una
+      marca en meta/seed).
+    - create, update, remove: el CRUD completo contra Firestore.
+
+7.4 profileService
+    - update: guarda nombre, apellido, teléfono y foto en Firestore.
+      Si se cambia el CORREO, Firebase envía un enlace de verificación a la
+      dirección nueva y el cambio se aplica recién cuando la persona lo
+      confirma. La app informa que hay un correo pendiente de confirmar.
+
+7.5 Manejo de errores
+    Los servicios traducen cualquier error de Firebase a un ServiceError con
+    un código y un mensaje en español (firebaseErrors.ts). Las pantallas lo
+    muestran tal cual en un banner ("El correo o la contraseña no son
+    correctos", "No tenés permiso", etc.).
+
+7.6 Seguridad (firestore.rules)
+    Las reglas de la base de datos se ejecutan en el servidor de Google, así
+    que no se pueden saltear desde la app:
+      - Hay que tener sesión iniciada para leer o escribir.
+      - Cada persona lee y edita SOLO su propio perfil; nadie puede borrar
+        perfiles.
+      - Los productos se validan con los mismos límites que la app: nombre de
+        3 a 60 caracteres, categoría válida, precio mayor a 0, stock entero
+        entre 0 y 99.999, descripción de hasta 200 caracteres.
+      - Las imágenes tienen un tope de tamaño de texto (~750 KB).
+    Las contraseñas las guarda y protege Firebase Authentication: la app
+    nunca las almacena.
+
+
+------------------------------------------------------------------------------
+8. FLUJO DE AUTENTICACIÓN PASO A PASO
+------------------------------------------------------------------------------
+
+8.1 Iniciar sesión
+    1) El usuario escribe correo y contraseña (y puede marcar "Recordarme").
+    2) Se valida el formato en pantalla.
+    3) Se llama a signIn() -> authService.login() -> Firebase.
+    4) Si es correcto: se carga el perfil de Firestore, el contexto guarda al
+       usuario y la app entra sola a las pestañas.
+    5) Si no: aparece un banner "El correo o la contraseña no son
+       correctos."
+    "Recordarme": con la casilla marcada la sesión se mantiene al cerrar y
+    abrir la app, y el correo queda precargado. Sin marcarla, la sesión se
+    cierra al volver a abrir la app.
+
+8.2 Registrarse
+    Campos: nombre, apellido, correo, teléfono, contraseña, repetir
+    contraseña y aceptar términos. La contraseña debe tener mínimo 8
+    caracteres, una mayúscula y un número, y se muestra un indicador visual
+    de cuáles reglas ya se cumplen. La cuenta real se crea en Firebase y
+    luego pasa a la pantalla "Listo".
+
+8.3 Para la demostración
+    No hay usuario precargado: se registra una cuenta desde la app (con un
+    correo real si se quiere probar la recuperación de contraseña).
+    La primera vez que alguien entra, se cargan los 5 productos de ejemplo.
+
+------------------------------------------------------------------------------
+9. RECUPERACIÓN DE CONTRASEÑA (POR CORREO REAL)
+------------------------------------------------------------------------------
+
+    Olvidé  ->  Enviado (revisá tu correo)  ->  [enlace en el mail]  ->  Login
+
+  1) OLVIDÉ: se ingresa el correo; Firebase envía un correo con un enlace.
+     La respuesta de la app es la misma exista o no la cuenta (evita que
+     alguien descubra qué correos están registrados).
+  2) ENVIADO: la pantalla pide revisar el correo (y la carpeta de spam).
+     Tiene un botón para volver al login, una opción "Cambiar correo" y un
+     "Reenviar correo" que se habilita tras una cuenta regresiva de 45
+     segundos (evita envíos repetidos).
+  3) EL ENLACE: al abrirlo, la persona elige la contraseña nueva en una
+     página de Firebase y luego vuelve a iniciar sesión en la app.
+
+Antes se usaba un código fijo de 6 dígitos; ahora se reemplazó por el
+mecanismo seguro y real de Firebase, por lo que ya no existen las pantallas
+de código ni de nueva contraseña dentro de la app.
+
+
+------------------------------------------------------------------------------
+10. FORMULARIOS Y VALIDACIONES
+------------------------------------------------------------------------------
+
+10.1 Validadores (src/utils/validators.ts)
+    Funciones escritas a mano, sin librerías. Cada una recibe un valor y
+    devuelve un mensaje de error en español, o nada si es válido.
+    Cubren: correo, nombres (solo letras, 2–40 caracteres), teléfono
+    (8–15 dígitos), contraseña (reglas), nombre de
+    producto (3–60), precio (mayor a 0, acepta coma o punto), stock
+    (entero, máx. 99.999), descripción (máx. 200) e imágenes.
+
+10.2 Hook useForm (src/hooks/useForm.ts)
+    Un único hook reutilizado por TODOS los formularios. Su comportamiento
+    está pensado para no agobiar al usuario:
+      - Valida cuando el usuario SALE del campo (no mientras escribe por
+        primera vez).
+      - Si ya hubo un error en ese campo, revalida en vivo para que el
+        mensaje desaparezca apenas se corrige.
+      - Al enviar con errores, muestra todos a la vez y lleva el foco al
+        primer campo inválido.
+
+10.3 Imágenes (src/utils/imagePicker.ts)
+    - Pide permiso para acceder a la galería (si lo niegan, explica cómo
+      activarlo).
+    - Valida el formato: solo PNG, JPG o WEBP.
+    - Valida el tamaño: máximo 2 MB.
+    - Valida primero el archivo ORIGINAL elegido y después lo reduce y
+      comprime a JPEG (producto: hasta 900 px; foto de perfil: hasta 400 px).
+    - La imagen se guarda como texto base64 dentro del documento de
+      Firestore (no se usa Firebase Storage, así no hace falta plan pago).
+    - Devuelve un resultado claro: ok, cancelado o error con mensaje.
+
+
+------------------------------------------------------------------------------
+11. PANTALLAS DE LA ZONA PRIVADA
+------------------------------------------------------------------------------
+
+11.1 INICIO
+    - Saludo con el nombre del usuario y su avatar (toca para ir al
+      perfil).
+    - Cifras del catálogo: cantidad de productos, productos con stock bajo
+      y cantidad de categorías.
+    - Accesos rápidos: ver productos y crear uno nuevo.
+    - Carrusel con los últimos 6 productos agregados; al tocar uno se abre
+      para editarlo.
+    Todo se calcula en vivo desde ProductsContext.
+
+11.2 PRODUCTOS
+    - Lista ordenada del más nuevo al más viejo.
+    - Buscador que ignora tildes y mayúsculas ("persiana" encuentra
+      "Persiana"; busca por nombre y por categoría).
+    - Aviso visual de stock bajo.
+    - Precios con formato argentino (ej. $ 185.000).
+    - Botones para editar y eliminar.
+    - Eliminar pide CONFIRMACIÓN con un panel inferior (ConfirmSheet), para
+      evitar borrados accidentales, y muestra estado de "eliminando".
+    - Estado de carga mientras llega la lista.
+
+11.3 FORMULARIO DE PRODUCTO (crear / editar)
+    Una misma pantalla sirve para ambos casos: si recibe un id, edita; si
+    no, crea. Campos: nombre, categoría (Ventanas, Puertas, Persianas,
+    Accesorios, Otros), precio, stock, descripción e imagen (obligatoria).
+
+11.4 PERFIL
+    - Datos del usuario: foto o iniciales, nombre, rol, correo, teléfono,
+      fecha desde la que es miembro.
+    - Botón para editar y botón para cerrar sesión.
+
+11.5 EDITAR PERFIL
+    - Modifica nombre, apellido, correo, teléfono y foto.
+    - Los cambios se guardan en Firestore. Si se cambia el correo, llega un
+      enlace de verificación a la dirección nueva y el cambio se aplica
+      cuando se confirma.
+    - Al guardar, updateUser() refresca la sesión y todas las pantallas
+      muestran los datos nuevos al instante.
+
+
+------------------------------------------------------------------------------
+12. DISEÑO Y EXPERIENCIA DE USUARIO
+------------------------------------------------------------------------------
+
+  - Design tokens (theme/tokens.ts): todos los colores, tipografías,
+    espaciados y radios en un solo archivo. Cambiar la identidad visual es
+    modificar ese archivo, no recorrer cada pantalla.
+  - Paleta azul/marino coherente con la marca ALUMAT.
+  - Componentes reutilizables (más de 25): Button, TextField,
+    PasswordField, SelectField, OtpInput, Banner, Avatar, ListRow,
+    BottomSheet, ConfirmSheet, Hero, Wave, etc. Cada pantalla se arma
+    combinándolos, lo que da consistencia y reduce código repetido.
+  - Existe un Manual de Identidad Visual (IDENTIDAD_VISUAL.md) con el
+    logotipo, la paleta, la tipografía y las reglas de uso de la marca.
+  - Accesibilidad: los elementos interactivos tienen roles y etiquetas
+    (por ejemplo "Ir a mi perfil") para lectores de pantalla.
+  - Mensajes de error claros, en español, que dicen cómo corregir el
+    problema ("Usá solo números. Ej: 125000 o 99,50.").
+
+
+------------------------------------------------------------------------------
+13. DEMOSTRACIÓN SUGERIDA (GUION EN VIVO)
+------------------------------------------------------------------------------
+
+  1) Mostrar el login. Probar con datos incorrectos -> aparece el error.
+  2) Registrar una cuenta nueva -> pantalla "Listo" -> iniciar sesión
+     (marcando "Recordarme").
+  3) Ver el Inicio con los 5 productos de ejemplo.
+  4) Ir a Productos, buscar "persiana", limpiar la búsqueda.
+  5) Crear un producto: primero enviar vacío (se ven los errores y el foco
+     salta al primer campo), luego completarlo y subir una imagen. Mostrar
+     que una imagen de más de 2 MB o de otro formato es rechazada.
+  6) Mostrar la sincronización en tiempo real: abrir la app en un segundo
+     dispositivo o en el navegador y ver que el producto aparece solo.
+  7) Editar el producto y eliminarlo mostrando la confirmación.
+  8) Volver a Inicio: las cifras se actualizaron solas.
+  9) Perfil -> Editar: cambiar el teléfono o la foto.
+ 10) Cerrar la app por completo y reabrirla: con "Recordarme" entra directo.
+ 11) Cerrar sesión -> se vuelve al login automáticamente.
+ 12) Recuperar contraseña: llega un correo real con el enlace.
+
+
+------------------------------------------------------------------------------
+14. CÓMO EJECUTAR EL PROYECTO
+------------------------------------------------------------------------------
+
+Requisitos: Node.js 24.12 o superior (lo exige Firebase), npm y la app Expo
+Go en el teléfono.
+
+Configuración previa de Firebase (una sola vez):
+  1) Copiar .env.example a .env y completar los seis valores
+     EXPO_PUBLIC_FIREBASE_* con la configuración de la app web del proyecto.
+  2) En Firebase Console habilitar Authentication con el método
+     "Correo electrónico/contraseña".
+  3) Crear la base Firestore y publicar el contenido de firestore.rules.
+  4) (Opcional) Personalizar el correo de recuperación en Authentication ->
+     Plantillas.
+
+    npm ci               instala las dependencias
+    npx expo start       inicia el servidor; escanear el QR con Expo Go
+    npx expo start --web         versión en el navegador
+    npx expo start --tunnel      si el QR no conecta por la red
+    npx expo start -c            limpia la caché
+    docker compose up --build    alternativa con Docker
+
+    npm run typecheck    verifica los tipos (tsc)
+    npm run lint         revisa el estilo del código (ESLint)
+
+
+------------------------------------------------------------------------------
+15. LIMITACIONES ACTUALES (DICHAS CON HONESTIDAD)
+------------------------------------------------------------------------------
+
+  - Las imágenes se guardan dentro del documento de Firestore como texto
+    (máx. ~700 KB, comprimidas): es práctico y gratuito, pero no escala
+    como un servicio de archivos dedicado.
+  - El catálogo es compartido: todo el personal con sesión puede crear,
+    editar y eliminar productos (no hay permisos por rol todavía; el rol
+    "Vendedor" es informativo y se cambia desde la consola de Firestore).
+  - El cambio de correo requiere que la persona confirme un enlace.
+  - Depende de la conexión a internet y de la configuración del proyecto
+    Firebase (.env y reglas publicadas).
+
+
+------------------------------------------------------------------------------
+16. PRÓXIMOS PASOS
+------------------------------------------------------------------------------
+
+  1) Permisos por rol: que solo "Administrador" pueda eliminar o editar
+     productos, aplicado en las reglas de Firestore.
+  2) Mover las imágenes a un servicio de almacenamiento de archivos
+     (Firebase Storage u otro) y guardar solo la URL.
+  3) Más datos de negocio: pedidos, clientes, medidas y presupuestos.
+  4) Modo sin conexión más completo y notificaciones (por ejemplo, aviso de
+     stock bajo).
+  5) Si se quisiera otro backend, alcanza con reescribir authService,
+     productService y profileService manteniendo sus firmas; pantallas,
+     contextos y navegación no cambian.
+
+
+------------------------------------------------------------------------------
+17. CONCLUSIÓN
+------------------------------------------------------------------------------
+
+ALUMAT es una app completa y funcional que cubre el ciclo típico de un
+sistema de gestión: autenticación, recuperación de acceso, perfil y CRUD de
+un catálogo con imágenes, con validaciones cuidadas y una interfaz
+consistente.
+
+Su mayor fortaleza es la arquitectura: separar pantallas, estado y acceso a
+datos, apoyada en Firebase para cuentas reales, datos en la nube con
+actualización en tiempo real y reglas de seguridad en el servidor. Si el
+backend cambiara, solo habría que modificar la capa de servicios.
+
+                         ¡Muchas gracias! ¿Preguntas?
+==============================================================================

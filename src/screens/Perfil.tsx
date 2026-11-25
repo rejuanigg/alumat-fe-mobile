@@ -48,7 +48,7 @@ export function Perfil({ navigation }: Props) {
           <ListRow label="Miembro desde" value={formatMonthYear(user.memberSince)} />
         </View>
         <Button title="Editar perfil" onPress={() => navigation.navigate('EditarPerfil')} />
-        <Button title="Cerrar sesión" variant="destructiveSoft" onPress={signOut} />
+        <Button title="Cerrar sesión" variant="destructiveSoft" onPress={() => void signOut()} />
       </View>
     </ScrollView>
   );

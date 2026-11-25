@@ -2,16 +2,16 @@
 
 App de **ALUMAT** (fábrica de aberturas) hecha con **Expo + TypeScript**. Incluye:
 
-1. Autenticación: login, registro, olvidé mi contraseña, código, nueva contraseña y pantalla "Listo".
+1. Autenticación: login, registro, pantalla "Listo" y recuperación de contraseña por correo.
 2. Perfil y edición de perfil (con foto).
 3. CRUD de **Productos** (listar, buscar, crear, editar, eliminar) con imagen.
 4. Inicio con bienvenida, cifras del catálogo y accesos.
 
-El backend está **simulado en memoria** (ver [Datos simulados](#datos-simulados-en-memoria)): no hace falta configurar ningún servicio externo.
+Los datos se guardan en **Firebase** (ver [Configurar Firebase](#configurar-firebase)).
 
 ## Requisitos
 
-- Node.js 22 LTS o posterior y npm.
+- Node.js 24.12 o posterior y npm (lo exige Firebase).
 - Expo Go actualizado en el teléfono (SDK 58).
 
 ```text
@@ -47,74 +47,47 @@ npm run typecheck   # tsc --noEmit
 npm run lint        # ESLint (config de Expo)
 ```
 
-## Usuario de prueba
+## Configurar Firebase
 
-| Correo | Contraseña |
-|---|---|
-| `romina@alumat.com` | `Alumat2024` |
+La app usa **Firebase Authentication** (cuentas y recuperación de contraseña) y **Cloud Firestore** (perfiles y productos). No necesita plan pago ni Firebase Storage.
 
-En "Olvidé mi contraseña" el código de verificación es siempre **`123456`**.
+1. **Credenciales:** copiar `.env.example` a `.env` y completar los seis valores `EXPO_PUBLIC_FIREBASE_*` con el `firebaseConfig` de la app web del proyecto (Firebase Console → Configuración del proyecto → Tus apps). Si falta alguno, la app no arranca y lo indica.
+2. **Authentication:** en Authentication → Método de acceso, habilitar **Correo electrónico/contraseña**.
+3. **Firestore:** crear la base de datos (si no existe) y publicar las reglas de `firestore.rules`: Firestore Database → Reglas → pegar el contenido → Publicar. Sin esas reglas, guardar perfiles o productos da "No tenés permiso".
+4. **Correo de recuperación (opcional):** en Authentication → Plantillas → Restablecimiento de contraseña se puede cambiar el remitente y el texto. La app pide los correos en español.
 
-## Datos simulados en memoria
+Después de reiniciar Expo (`npx expo start -c`), registrá una cuenta desde la app. La primera vez que alguien entra se cargan los 5 productos de ejemplo.
 
-Todo vive en `src/services/db.ts` y **se pierde al recargar la app**:
+## Cómo funciona cada parte
 
-| Qué | Dónde | Comportamiento actual |
+| Qué | Dónde | Cómo |
 |---|---|---|
-| Usuarios y contraseñas | `db.users` | Romina Flores precargada; los registros nuevos se agregan a la lista. Las contraseñas se guardan en texto plano (solo para la demo). |
-| Sesión | `AuthContext` | Solo en memoria: al cerrar la app hay que volver a iniciar sesión. |
-| "Recordarme" | `db.rememberedEmail` | Precarga el correo en el Login mientras la app siga abierta. |
-| Código de recuperación | `authService` (`DEMO_RESET_CODE`) | Siempre `123456`; no se envía ningún correo. |
-| Productos | `db.products` | Los 5 productos de ejemplo; crear, editar y eliminar modifican la lista. |
-| Imágenes (producto y perfil) | campos `imageUri` / `photoUri` | Se guarda la URI local del archivo elegido; no se sube a ningún servidor. |
-| Latencia | `delay()` | Cada llamada espera 200–350 ms para simular la red. |
+| Sesión | `authService`, `AuthContext` | `signInWithEmailAndPassword`. Con **Recordarme** la sesión se mantiene al cerrar la app (AsyncStorage en el teléfono, almacenamiento del navegador en web) y el correo queda precargado. Sin Recordarme, la sesión se cierra al volver a abrir la app. |
+| Registro | `authService.register` | `createUserWithEmailAndPassword` + documento `users/{uid}` en Firestore. Se hace con una instancia secundaria de Firebase para no iniciar sesión sola: el flujo sigue siendo Registro → Listo → Login. Rol por defecto: `Vendedor` (se cambia desde la consola de Firestore). |
+| Recuperar contraseña | `authService.requestPasswordReset` | `sendPasswordResetEmail`: llega un **correo real** con un enlace; la contraseña nueva se elige en la página de Firebase. Por seguridad, la app no informa si el correo tiene cuenta. |
+| Perfil | `profileService`, `users/{uid}` | Nombre, apellido, teléfono y foto se guardan en Firestore. Cambiar el correo envía un enlace de verificación a la dirección nueva (`verifyBeforeUpdateEmail`); el cambio se aplica cuando la persona lo confirma. |
+| Productos | `productService`, colección `products` | Catálogo compartido por todo el personal, sincronizado en tiempo real (`onSnapshot`). |
+| Imágenes | `utils/imagePicker.ts` | Se valida el archivo original (PNG, JPG o WEBP, máx. 2 MB), se reduce y comprime a JPEG y se guarda como texto base64 dentro del documento de Firestore (máx. ~700 KB). |
 
-## Cómo conectarla a una API real
+Las reglas (`firestore.rules`) exigen sesión iniciada, permiten que cada persona lea y edite solo su perfil, y validan los campos de los productos con los mismos límites que la app.
 
-Las pantallas no tocan `db` directamente: solo usan los métodos **async** de tres servicios. Para pasar a una API alcanza con reescribir el cuerpo de esos métodos manteniendo las mismas firmas.
-
-| Servicio | Métodos | Endpoint sugerido |
-|---|---|---|
-| `authService` | `login`, `register`, `requestPasswordReset`, `verifyResetCode`, `resetPassword`, `getRememberedEmail` | `POST /auth/login`, `POST /auth/register`, `POST /auth/forgot`, `POST /auth/verify-code`, `POST /auth/reset` |
-| `productService` | `list`, `create`, `update`, `remove` | `GET/POST /products`, `PUT/DELETE /products/:id` |
-| `profileService` | `update` | `PUT /users/:id` |
-
-Ejemplo para `productService.list`:
-
-```ts
-const API_URL = process.env.EXPO_PUBLIC_API_URL;
-
-async list(): Promise<Product[]> {
-  const res = await fetch(`${API_URL}/products`, { headers: { Authorization: `Bearer ${token}` } });
-  if (!res.ok) throw new ServiceError('http_error', 'No pudimos cargar los productos.');
-  return (await res.json()) as Product[];
-}
-```
-
-Pasos:
-
-1. Definir `EXPO_PUBLIC_API_URL` en `.env`.
-2. **Errores:** cuando la API responda con un error, lanzar `ServiceError(code, mensaje)`. Las pantallas ya muestran `mensaje` en un banner (por ejemplo, credenciales inválidas o correo ya registrado).
-3. **Sesión:** hacer que `login` devuelva también el token, guardarlo en `AuthContext` y persistirlo con `expo-secure-store` para que la sesión sobreviva al cerrar la app. Al iniciar, leerlo y, si es válido, entrar directo a las pestañas.
-4. **Imágenes:** antes de `create`/`update` (o de `profileService.update`), subir el archivo con `FormData` (multipart) y guardar en `imageUri`/`photoUri` la URL que devuelva el servidor. Las validaciones de formato y tamaño (`src/utils/imagePicker.ts`) siguen sirviendo del lado del cliente.
-5. Borrar `src/services/db.ts` y `DEMO_RESET_CODE` cuando ya no se usen.
-
-El estado de la app (`AuthContext`, `ProductsContext`) no cambia: sigue llamando a los mismos métodos.
+Si más adelante se quiere usar otra API, las pantallas solo llaman a los métodos async de `authService`, `productService` y `profileService`: alcanza con reescribirlos manteniendo las firmas y lanzando `ServiceError(code, mensaje)` ante errores.
 
 ## Estructura
 
 ```text
 ├── App.tsx                 fuentes Figtree, providers y navegación
+├── firestore.rules         reglas de seguridad de Firestore
 ├── assets/                 icon.png (logo ALUMAT), edificio.png (foto del login)
 └── src/
     ├── theme/tokens.ts     colores, tipografía, espaciado, radios y medidas
-    ├── components/         Hero, Wave, Panes, TextField, PasswordField, Button, OtpInput,
+    ├── components/         Hero, Wave, Panes, TextField, PasswordField, Button,
     │                       SelectField, ImagePickerField, ConfirmSheet, TabBar, Logo, Banner…
     ├── navigation/         RootNavigator, AuthStack, AppTabs, ProductosStack, PerfilStack
-    ├── screens/auth/       Login, Registro, Olvide, Codigo, Nueva, Listo
+    ├── screens/auth/       Login, Registro, Olvide, Enviado, Listo
     ├── screens/            Inicio, Productos, ProductoForm, Perfil, EditarPerfil
     ├── context/            AuthContext, ProductsContext (Context + useReducer)
     ├── hooks/useForm.ts    validación al salir del campo y al enviar, foco al primer error
-    ├── services/           authService, productService, profileService, db (en memoria)
+    ├── services/           firebase (config), authService, productService, profileService
     └── utils/              validators, format (precios es-AR, fechas), imagePicker
 ```

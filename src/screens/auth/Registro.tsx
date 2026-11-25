@@ -60,7 +60,7 @@ export function Registro({ navigation }: Props) {
     setSubmitting(true);
     try {
       await authService.register(v);
-      navigation.replace('Listo', { from: 'registro' });
+      navigation.replace('Listo');
     } catch (e) {
       setServerError(e instanceof ServiceError ? e.message : 'No pudimos crear la cuenta. Probá de nuevo.');
     } finally {

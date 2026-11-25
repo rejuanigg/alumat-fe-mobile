@@ -67,9 +67,14 @@ function EditarPerfilForm({ user, onSaved, onBack }: { user: User; onSaved: (u: 
     if (!form.validateAll()) return;
     setSaving(true);
     try {
-      const updated = await profileService.update(user.id, v);
+      const { user: updated, pendingEmail } = await profileService.update(user, v);
       onSaved(updated);
-      setBanner({ kind: 'success', message: 'Cambios guardados correctamente.' });
+      setBanner({
+        kind: 'success',
+        message: pendingEmail
+          ? `Cambios guardados. Te enviamos un correo a ${pendingEmail} para confirmar el cambio de correo.`
+          : 'Cambios guardados correctamente.',
+      });
       scrollRef.current?.scrollTo({ y: 0, animated: true });
     } catch (e) {
       setBanner({

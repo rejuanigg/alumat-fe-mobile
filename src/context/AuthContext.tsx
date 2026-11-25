@@ -1,9 +1,9 @@
-import { createContext, use, useMemo, useReducer, type ReactNode } from 'react';
+import { createContext, use, useEffect, useMemo, useReducer, type ReactNode } from 'react';
 
 import { authService } from '../services/authService';
 import type { User } from '../services/types';
 
-type State = { user: User | null };
+type State = { status: 'loading' | 'signedOut' | 'signedIn'; user: User | null };
 
 type Action = { type: 'signIn'; user: User } | { type: 'signOut' } | { type: 'update'; user: User };
 
@@ -11,35 +11,49 @@ function reducer(state: State, action: Action): State {
   switch (action.type) {
     case 'signIn':
     case 'update':
-      return { user: action.user };
+      return { status: 'signedIn', user: action.user };
     case 'signOut':
-      return { user: null };
+      return { status: 'signedOut', user: null };
   }
 }
 
-type AuthContextValue = {
-  user: User | null;
+type AuthContextValue = State & {
   signIn: (email: string, password: string, remember: boolean) => Promise<void>;
-  signOut: () => void;
+  signOut: () => Promise<void>;
   updateUser: (user: User) => void;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(reducer, { user: null });
+  const [state, dispatch] = useReducer(reducer, { status: 'loading', user: null });
+
+  useEffect(() => {
+    let active = true;
+    void authService.restoreSession().then((user) => {
+      if (active) dispatch(user ? { type: 'signIn', user } : { type: 'signOut' });
+    });
+    const unsubscribe = authService.onSignedOut(() => dispatch({ type: 'signOut' }));
+    return () => {
+      active = false;
+      unsubscribe();
+    };
+  }, []);
 
   const value = useMemo<AuthContextValue>(
     () => ({
-      user: state.user,
+      ...state,
       signIn: async (email, password, remember) => {
         const user = await authService.login(email, password, remember);
         dispatch({ type: 'signIn', user });
       },
-      signOut: () => dispatch({ type: 'signOut' }),
+      signOut: async () => {
+        await authService.logout();
+        dispatch({ type: 'signOut' });
+      },
       updateUser: (user) => dispatch({ type: 'update', user }),
     }),
-    [state.user],
+    [state],
   );
 
   return <AuthContext value={value}>{children}</AuthContext>;

@@ -9,7 +9,6 @@ const NAME_REGEX = /^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ' -]+$/;
 const PHONE_CHARS_REGEX = /^[\d\s+()-]+$/;
 const PRICE_REGEX = /^\d+([.,]\d{1,2})?$/;
 const INTEGER_REGEX = /^\d+$/;
-const CODE_REGEX = /^\d{6}$/;
 
 export const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
 export const ALLOWED_IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'webp'] as const;
@@ -72,9 +71,6 @@ export function validatePasswordMatch(password: string, repeat: string): string 
 
 export const validateTerms: Validator<boolean> = (accepted) =>
   accepted ? undefined : 'Aceptá los términos para continuar.';
-
-export const validateCode: Validator = (v) =>
-  CODE_REGEX.test(v) ? undefined : 'Ingresá los 6 dígitos del código.';
 
 // ── Producto ─────────────────────────────────────────────────────────
 

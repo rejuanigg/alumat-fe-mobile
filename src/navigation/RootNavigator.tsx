@@ -1,4 +1,5 @@
 import { DefaultTheme, NavigationContainer, type Theme } from '@react-navigation/native';
+import { StyleSheet, View } from 'react-native';
 
 import { useAuth } from '../context/AuthContext';
 import { colors } from '../theme/tokens';
@@ -11,7 +12,13 @@ const navTheme: Theme = {
 };
 
 export function RootNavigator() {
-  const { user } = useAuth();
+  const { status, user } = useAuth();
+  // Mientras Firebase recupera la sesión guardada mostramos solo el fondo de marca.
+  if (status === 'loading') return <View style={styles.loading} />;
   // Al cambiar de árbol (sesión iniciada / cerrada) el stack anterior se descarta por completo.
   return <NavigationContainer theme={navTheme}>{user ? <AppTabs /> : <AuthStack />}</NavigationContainer>;
 }
+
+const styles = StyleSheet.create({
+  loading: { flex: 1, backgroundColor: colors.navy },
+});

@@ -4,9 +4,8 @@ export type AuthStackParamList = {
   Login: undefined;
   Registro: undefined;
   Olvide: undefined;
-  Codigo: { email: string };
-  Nueva: { email: string; code: string };
-  Listo: { from: 'registro' | 'reset' };
+  Enviado: { email: string };
+  Listo: undefined;
 };
 
 export type ProductosStackParamList = {

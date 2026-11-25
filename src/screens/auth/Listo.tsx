@@ -12,12 +12,8 @@ import { colors, spacing, type } from '../../theme/tokens';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Listo'>;
 
-const COPY = {
-  registro: 'Tu cuenta se creó correctamente. Ya podés iniciar sesión con tu correo y contraseña.',
-  reset: 'Tu contraseña se actualizó. Ya podés iniciar sesión con la nueva.',
-} as const;
 
-export function Listo({ navigation, route }: Props) {
+export function Listo({ navigation }: Props) {
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   // ~560 en el diseño; en pantallas bajas deja lugar al botón.
@@ -35,7 +31,7 @@ export function Listo({ navigation, route }: Props) {
           <Text style={[type.display, styles.title]} accessibilityRole="header">
             {'¡Todo\nlisto!'}
           </Text>
-          <Text style={[type.bodyLarge, styles.text]}>{COPY[route.params.from]}</Text>
+          <Text style={[type.bodyLarge, styles.text]}>Tu cuenta se creó correctamente. Ya podés iniciar sesión con tu correo y contraseña.</Text>
         </View>
         <Wave />
       </View>
