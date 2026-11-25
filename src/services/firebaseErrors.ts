@@ -9,6 +9,7 @@ const MESSAGES: Record<string, string> = {
   'auth/invalid-email': 'Ingresá un correo válido. Ej: nombre@empresa.com',
   'auth/email-already-in-use': 'Ya existe una cuenta con ese correo.',
   'auth/weak-password': 'La contraseña es demasiado débil.',
+  'auth/password-does-not-meet-requirements': 'La contraseña no cumple los requisitos de seguridad.',
   'auth/user-disabled': 'Esta cuenta está deshabilitada.',
   'auth/too-many-requests': 'Hiciste demasiados intentos. Esperá unos minutos y probá de nuevo.',
   'auth/network-request-failed': 'No hay conexión. Revisá tu internet y probá de nuevo.',

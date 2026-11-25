@@ -25,18 +25,41 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // `deletedAt`: eliminado lógico. Ausente o null = activo; string ISO = eliminado (recuperable).
+    function validDeletedAt(data) {
+      return !('deletedAt' in data) || data.deletedAt == null || data.deletedAt is string;
+    }
+
     // Catálogo compartido por todo el personal con sesión iniciada.
+    // No se permite borrar documentos: se eliminan de forma lógica con `deletedAt`.
+    function isActive(data) {
+      return !('deletedAt' in data) || data.deletedAt == null;
+    }
+
+    function validProduct(data) {
+      return validDeletedAt(data)
+        && data.name is string
+        && data.name.size() >= 3 && data.name.size() <= 60
+        && data.category in ['Ventanas', 'Puertas', 'Persianas', 'Accesorios', 'Otros']
+        && data.price is number && data.price > 0
+        && data.stock is int
+        && data.stock >= 0 && data.stock <= 99999
+        && data.description is string && data.description.size() <= 200
+        && validImage(data.imageUri);
+    }
+
     match /products/{id} {
-      allow read, delete: if signedIn();
-      allow create, update: if signedIn()
-        && request.resource.data.name is string
-        && request.resource.data.name.size() >= 3 && request.resource.data.name.size() <= 60
-        && request.resource.data.category in ['Ventanas', 'Puertas', 'Persianas', 'Accesorios', 'Otros']
-        && request.resource.data.price is number && request.resource.data.price > 0
-        && request.resource.data.stock is int
-        && request.resource.data.stock >= 0 && request.resource.data.stock <= 99999
-        && request.resource.data.description is string && request.resource.data.description.size() <= 200
-        && validImage(request.resource.data.imageUri);
+      allow read: if signedIn();
+      allow delete: if false;
+      // Todo producto nace activo.
+      allow create: if signedIn() && isActive(request.resource.data) && validProduct(request.resource.data);
+      // Un producto eliminado solo puede cambiar `deletedAt` (recuperarlo): sus datos no se editan.
+      // `createdAt` no cambia después de crear el producto.
+      allow update: if signedIn()
+        && (isActive(resource.data)
+            || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['deletedAt']))
+        && request.resource.data.get('createdAt', null) == resource.data.get('createdAt', null)
+        && validProduct(request.resource.data);
     }
 
     // Marca de que ya se cargaron los productos de ejemplo.

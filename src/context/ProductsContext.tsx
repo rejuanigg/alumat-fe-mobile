@@ -3,45 +3,51 @@ import { createContext, use, useEffect, useMemo, useReducer, type ReactNode } fr
 import { productService } from '../services/productService';
 import type { Product, ProductInput } from '../services/types';
 
-type State = { products: Product[]; loading: boolean; error: string | null };
+/** `all` incluye los eliminados lógicamente; se separan en el valor del contexto. */
+type State = { all: Product[]; loading: boolean; error: string | null };
 
 type Action =
   | { type: 'loaded'; products: Product[] }
   | { type: 'failed'; message: string }
-  | { type: 'upserted'; product: Product }
-  | { type: 'removed'; id: string };
+  | { type: 'upserted'; product: Product };
 
 function reducer(state: State, action: Action): State {
   switch (action.type) {
     case 'loaded':
-      return { products: action.products, loading: false, error: null };
+      return { all: action.products, loading: false, error: null };
     case 'failed':
       return { ...state, loading: false, error: action.message };
     case 'upserted': {
-      const exists = state.products.some((p) => p.id === action.product.id);
+      const exists = state.all.some((p) => p.id === action.product.id);
       return {
         ...state,
-        products: exists
-          ? state.products.map((p) => (p.id === action.product.id ? action.product : p))
-          : [...state.products, action.product],
+        all: exists
+          ? state.all.map((p) => (p.id === action.product.id ? action.product : p))
+          : [...state.all, action.product],
       };
     }
-    case 'removed':
-      return { ...state, products: state.products.filter((p) => p.id !== action.id) };
   }
 }
 
-type ProductsContextValue = State & {
+type ProductsContextValue = {
+  /** Productos activos (los que se muestran en el catálogo). */
+  products: Product[];
+  /** Productos eliminados lógicamente, que todavía se pueden recuperar. */
+  deleted: Product[];
+  loading: boolean;
+  error: string | null;
   create: (input: ProductInput) => Promise<Product>;
   update: (id: string, input: ProductInput) => Promise<void>;
+  /** Eliminado lógico: el producto pasa a "eliminados" y se puede recuperar. */
   remove: (id: string) => Promise<void>;
+  restore: (id: string) => Promise<void>;
 };
 
 const ProductsContext = createContext<ProductsContextValue | null>(null);
 
 /** Catálogo sincronizado en tiempo real con Firestore (colección `products`). */
 export function ProductsProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(reducer, { products: [], loading: true, error: null });
+  const [state, dispatch] = useReducer(reducer, { all: [], loading: true, error: null });
 
   useEffect(() => {
     // Si falla la carga inicial de ejemplos, igual escuchamos la colección.
@@ -52,9 +58,16 @@ export function ProductsProvider({ children }: { children: ReactNode }) {
     );
   }, []);
 
-  const value = useMemo<ProductsContextValue>(
-    () => ({
-      ...state,
+  const value = useMemo<ProductsContextValue>(() => {
+    const setDeletedAt = (id: string, deletedAt: string | null) => {
+      const current = state.all.find((p) => p.id === id);
+      if (current) dispatch({ type: 'upserted', product: { ...current, deletedAt } });
+    };
+    return {
+      products: state.all.filter((p) => p.deletedAt === null),
+      deleted: state.all.filter((p) => p.deletedAt !== null),
+      loading: state.loading,
+      error: state.error,
       create: async (input) => {
         const product = await productService.create(input);
         dispatch({ type: 'upserted', product });
@@ -62,16 +75,18 @@ export function ProductsProvider({ children }: { children: ReactNode }) {
       },
       update: async (id, input) => {
         await productService.update(id, input);
-        const current = state.products.find((p) => p.id === id);
+        const current = state.all.find((p) => p.id === id);
         if (current) dispatch({ type: 'upserted', product: { ...current, ...input } });
       },
       remove: async (id) => {
-        await productService.remove(id);
-        dispatch({ type: 'removed', id });
+        setDeletedAt(id, await productService.remove(id));
       },
-    }),
-    [state],
-  );
+      restore: async (id) => {
+        await productService.restore(id);
+        setDeletedAt(id, null);
+      },
+    };
+  }, [state]);
 
   return <ProductsContext value={value}>{children}</ProductsContext>;
 }

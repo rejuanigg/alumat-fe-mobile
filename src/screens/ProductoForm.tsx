@@ -1,10 +1,11 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { useMemo, useRef, useState } from 'react';
-import type { ScrollViewInstance } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, StyleSheet, Text, View, type ScrollViewInstance } from 'react-native';
 
 import { Banner } from '../components/Banner';
 import { Button } from '../components/Button';
 import { Columns } from '../components/Columns';
+import { ConfirmSheet } from '../components/ConfirmSheet';
 import { FormScreen } from '../components/FormScreen';
 import { Hero } from '../components/Hero';
 import { ImagePickerField } from '../components/ImagePickerField';
@@ -12,8 +13,9 @@ import { SelectField } from '../components/SelectField';
 import { TextField } from '../components/TextField';
 import { useProducts } from '../context/ProductsContext';
 import { useForm, type FieldRules } from '../hooks/useForm';
-import type { ProductosStackParamList } from '../navigation/types';
+import type { ProductNotice, ProductosStackParamList } from '../navigation/types';
 import { CATEGORIES, ServiceError, type Category, type Product } from '../services/types';
+import { colors, spacing, type } from '../theme/tokens';
 import { priceToInput } from '../utils/format';
 import {
   parsePrice,
@@ -56,25 +58,107 @@ const BASE_RULES: FieldRules<Values> = {
 };
 const CREATE_RULES: FieldRules<Values> = { image: validateProductImage, ...BASE_RULES };
 
-export function ProductoForm({ navigation, route }: Props) {
-  const { products, create, update } = useProducts();
-  const id = route.params?.id;
-  const editing = id !== undefined;
-  const product = useMemo(() => products.find((p) => p.id === id), [products, id]);
+/** Compara valores del formulario para saber si hay cambios sin guardar. */
+const sameValues = (a: Values, b: Values) => (Object.keys(a) as (keyof Values)[]).every((k) => a[k] === b[k]);
 
-  const form = useForm<Values>(toValues(product), editing ? BASE_RULES : CREATE_RULES);
+export function ProductoForm({ navigation, route }: Props) {
+  const { products, loading } = useProducts();
+  const id = route.params?.id;
+  const live = id === undefined ? undefined : products.find((p) => p.id === id);
+
+  // Guardamos la primera versión que encontramos del producto: si otra persona lo elimina mientras
+  // se edita, el formulario no se desarma (se pierden los cambios) sino que avisa y bloquea el guardado.
+  const [snapshot, setSnapshot] = useState<Product | undefined>(live);
+  useEffect(() => {
+    if (!snapshot && live) setSnapshot(live);
+  }, [snapshot, live]);
+
+  if (id === undefined) return <ProductoFormBody key="new" navigation={navigation} available />;
+
+  const product = snapshot ?? live;
+  if (!product) {
+    return (
+      <FormScreen bottomInset={false} header={<Hero height={200} title={'Editar\nproducto'} onBack={navigation.goBack} />}>
+        {loading ? (
+          <ActivityIndicator color={colors.blue} style={styles.loading} />
+        ) : (
+          <View style={styles.missing}>
+            <Text style={[type.heading, styles.ink]}>No encontramos este producto</Text>
+            <Text style={[type.body, styles.muted]}>
+              Puede que se haya eliminado. Si fue así, lo podés recuperar desde la pestaña Eliminados del listado.
+            </Text>
+            <Button title="Volver a productos" onPress={() => navigation.popTo('Productos')} />
+          </View>
+        )}
+      </FormScreen>
+    );
+  }
+  return <ProductoFormBody key={id} navigation={navigation} product={product} available={live !== undefined} />;
+}
+
+type BodyProps = {
+  navigation: Props['navigation'];
+  /** Producto a editar; si no viene, el formulario crea uno nuevo. */
+  product?: Product;
+  /** false si el producto se eliminó mientras estaba abierto el formulario. */
+  available: boolean;
+};
+
+function ProductoFormBody({ navigation, product, available }: BodyProps) {
+  const { create, update } = useProducts();
+  const editing = product !== undefined;
+  const [initial] = useState(() => toValues(product));
+
+  const form = useForm<Values>(initial, editing ? BASE_RULES : CREATE_RULES);
   const { values: v, errors, setValue, validateField, register, focus } = form;
   const [saving, setSaving] = useState(false);
   const [banner, setBanner] = useState<{ kind: 'success' | 'error'; message: string } | null>(null);
+  const [pendingLeave, setPendingLeave] = useState<(() => void) | null>(null);
   const scrollRef = useRef<ScrollViewInstance>(null);
+  // Refs (y no estado) porque se leen en el mismo tick: evitan doble envío y salir a mitad de un guardado.
+  const savingRef = useRef(false);
+  const leavingRef = useRef(false);
+
+  const dirty = !sameValues(v, initial);
+
+  // Cubre todas las formas de salir: flecha del encabezado, "Cancelar", botón atrás de Android y gesto de iOS.
+  useEffect(
+    () =>
+      navigation.addListener('beforeRemove', (e) => {
+        if (leavingRef.current) return;
+        if (savingRef.current) {
+          e.preventDefault(); // no se sale mientras se guarda: el resultado quedaría sin informar
+          return;
+        }
+        if (!dirty) return;
+        e.preventDefault();
+        setPendingLeave(() => () => {
+          leavingRef.current = true;
+          navigation.dispatch(e.data.action);
+        });
+      }),
+    [navigation, dirty],
+  );
+
+  const scrollTop = () => scrollRef.current?.scrollTo({ y: 0, animated: true });
 
   const submit = async () => {
+    if (savingRef.current) return;
     setBanner(null);
-    if (!form.validateAll()) {
-      // La imagen y la categoría no reciben foco de teclado: subimos para que se vea el error.
-      if ((!editing && !v.image) || !v.category) scrollRef.current?.scrollTo({ y: 0, animated: true });
+    if (editing && !available) {
+      setBanner({
+        kind: 'error',
+        message: 'Este producto se eliminó mientras lo editabas. Recuperalo desde Eliminados para volver a modificarlo.',
+      });
+      scrollTop();
       return;
     }
+    if (!form.validateAll()) {
+      // La imagen y la categoría no reciben foco de teclado: subimos para que se vea el error.
+      if ((!editing && !v.image) || !v.category) scrollTop();
+      return;
+    }
+    savingRef.current = true;
     setSaving(true);
     try {
       const input = {
@@ -87,21 +171,26 @@ export function ProductoForm({ navigation, route }: Props) {
         imageName: v.imageName,
       };
       if (editing) {
-        await update(id, input);
+        await update(product.id, input);
       } else {
-        const created = await create(input);
-        // A partir de acá el formulario edita el producto recién creado.
-        navigation.setParams({ id: created.id });
+        await create(input);
       }
-      setBanner({ kind: 'success', message: 'Producto guardado correctamente.' });
-      scrollRef.current?.scrollTo({ y: 0, animated: true });
+      const notice: ProductNotice = {
+        kind: editing ? 'updated' : 'created',
+        name: input.name,
+        key: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      };
+      savingRef.current = false;
+      leavingRef.current = true;
+      navigation.popTo('Productos', { notice });
     } catch (e) {
+      savingRef.current = false;
+      setSaving(false);
       setBanner({
         kind: 'error',
         message: e instanceof ServiceError ? e.message : 'No pudimos guardar el producto. Probá de nuevo.',
       });
-    } finally {
-      setSaving(false);
+      scrollTop();
     }
   };
 
@@ -113,6 +202,12 @@ export function ProductoForm({ navigation, route }: Props) {
         <Hero height={200} title={editing ? 'Editar\nproducto' : 'Nuevo\nproducto'} onBack={navigation.goBack} />
       }
     >
+      {editing && !available ? (
+        <Banner
+          kind="error"
+          message="Este producto se eliminó mientras lo editabas. Los cambios no se pueden guardar hasta que lo recuperes."
+        />
+      ) : null}
       {banner ? <Banner kind={banner.kind} message={banner.message} /> : null}
       <ImagePickerField
         label="Imagen"
@@ -188,9 +283,35 @@ export function ProductoForm({ navigation, route }: Props) {
         multiline
         numberOfLines={4}
       />
-      <Button title="Guardar producto" large onPress={() => void submit()} loading={saving} />
+      <Button
+        title={editing ? 'Guardar cambios' : 'Crear producto'}
+        large
+        onPress={() => void submit()}
+        loading={saving}
+        disabled={editing && !available}
+      />
       <Button title="Cancelar" variant="secondary" onPress={navigation.goBack} disabled={saving} />
+      <ConfirmSheet
+        visible={pendingLeave !== null}
+        title="¿Descartar los cambios?"
+        description="Si salís ahora, se pierde lo que cargaste en el formulario."
+        confirmLabel="Sí, descartar"
+        cancelLabel="Seguir editando"
+        onConfirm={() => {
+          const leave = pendingLeave;
+          setPendingLeave(null);
+          leave?.();
+        }}
+        onCancel={() => setPendingLeave(null)}
+      />
     </FormScreen>
   );
 }
+
+const styles = StyleSheet.create({
+  loading: { marginTop: spacing.xl },
+  missing: { gap: spacing.sm },
+  ink: { color: colors.ink },
+  muted: { color: colors.muted },
+});
 

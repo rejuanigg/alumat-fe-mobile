@@ -18,6 +18,7 @@ import {
   validateEmail,
   validateFirstName,
   validateLastName,
+  PASSWORD_HINT,
   validateNewPassword,
   validatePasswordMatch,
   validatePhone,
@@ -43,7 +44,7 @@ const RULES: FieldRules<Values> = {
   lastName: validateLastName,
   email: validateEmail,
   phone: validatePhone,
-  password: validateNewPassword,
+  password: (v, all) => validateNewPassword(v, all),
   repeat: (v, all) => validatePasswordMatch(all.password, v),
   terms: validateTerms,
 };
@@ -141,7 +142,7 @@ export function Registro({ navigation }: Props) {
         onChangeText={(t) => setValue('password', t)}
         onBlur={() => validateField('password')}
         error={errors.password}
-        hint="Al menos 8 caracteres, una mayúscula y un número."
+        hint={PASSWORD_HINT}
         autoComplete="new-password"
         textContentType="newPassword"
         returnKeyType="next"

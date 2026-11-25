@@ -68,6 +68,15 @@ export function useForm<T extends Values>(initial: T, rules: FieldRules<T>) {
     [],
   );
 
+  /** Marca un error externo (p. ej. devuelto por el servidor) en un campo. */
+  const setError = useCallback(
+    (key: keyof T, msg: string | undefined) => {
+      applyError(key, msg);
+      if (msg) refs.current[key]?.focus();
+    },
+    [applyError],
+  );
+
   const focus = useCallback((key: keyof T) => refs.current[key]?.focus(), []);
 
   const reset = useCallback((next: T) => {
@@ -77,5 +86,5 @@ export function useForm<T extends Values>(initial: T, rules: FieldRules<T>) {
     setErrors({});
   }, []);
 
-  return { values, errors, setValue, validateField, validateAll, register, focus, reset };
+  return { values, errors, setValue, validateField, validateAll, register, focus, reset, setError };
 }

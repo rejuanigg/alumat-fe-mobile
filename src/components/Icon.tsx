@@ -10,6 +10,7 @@ export type IconName =
   | 'search'
   | 'edit'
   | 'trash'
+  | 'restore'
   | 'home'
   | 'box'
   | 'user'
@@ -80,6 +81,8 @@ function renderShape(name: IconName, c: Common) {
       return <Path d="M4 20h4L19 9l-4-4L4 16v4zM13.5 6.5l4 4" {...c} />;
     case 'trash':
       return <Path d="M4 7h16M9 7V4.5h6V7M6.5 7l1 13h9l1-13M10 11v5.5M14 11v5.5" {...c} />;
+    case 'restore':
+      return <Path d="M4 4v5h5M4.6 15a8 8 0 1 0 1.3-8.4L4 9" {...c} />;
     case 'home':
       return <Path d="M3.5 10.5L12 4l8.5 6.5V20h-5.5v-6h-6v6H3.5z" {...c} />;
     case 'box':

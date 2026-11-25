@@ -8,26 +8,63 @@ import { Button } from '../components/Button';
 import { Columns } from '../components/Columns';
 import { FormScreen } from '../components/FormScreen';
 import { Hero } from '../components/Hero';
+import { PasswordField } from '../components/PasswordField';
 import { TextField } from '../components/TextField';
 import { useAuth } from '../context/AuthContext';
 import { useForm, type FieldRules } from '../hooks/useForm';
 import type { PerfilStackParamList } from '../navigation/types';
-import { profileService } from '../services/profileService';
+import { profileService, WRONG_CURRENT_PASSWORD } from '../services/profileService';
 import { ServiceError, type User } from '../services/types';
 import { colors, fonts, sizes, spacing, type } from '../theme/tokens';
 import { initials } from '../utils/format';
 import { pickImage } from '../utils/imagePicker';
-import { validateEmail, validateFirstName, validateLastName, validatePhone } from '../utils/validators';
+import {
+  PASSWORD_HINT,
+  validateEmail,
+  validateFirstName,
+  validateLastName,
+  validateNewPassword,
+  validatePasswordMatch,
+  validatePhone,
+} from '../utils/validators';
 
 type Props = NativeStackScreenProps<PerfilStackParamList, 'EditarPerfil'>;
 
-type Values = { firstName: string; lastName: string; email: string; phone: string; photoUri: string | null };
+type Values = {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  photoUri: string | null;
+  currentPassword: string;
+  newPassword: string;
+  repeatPassword: string;
+};
+
+/** El cambio de contraseña es opcional: solo se valida si se completó alguno de sus campos. */
+const wantsPasswordChange = (all: Values) => Boolean(all.currentPassword || all.newPassword || all.repeatPassword);
 
 const RULES: FieldRules<Values> = {
   firstName: validateFirstName,
   lastName: validateLastName,
   email: validateEmail,
   phone: validatePhone,
+  currentPassword: (v, all) => {
+    if (!wantsPasswordChange(all)) return undefined;
+    return v ? undefined : 'Ingresá tu contraseña actual para cambiarla.';
+  },
+  newPassword: (v, all) => {
+    if (!wantsPasswordChange(all)) return undefined;
+    if (!v) return 'Ingresá la nueva contraseña.';
+    const error = validateNewPassword(v, all);
+    if (error) return error;
+    if (v === all.currentPassword) return 'La nueva contraseña tiene que ser distinta de la actual.';
+    return undefined;
+  },
+  repeatPassword: (v, all) => {
+    if (!wantsPasswordChange(all)) return undefined;
+    return validatePasswordMatch(all.newPassword, v);
+  },
 };
 
 const toValues = (u: User): Values => ({
@@ -36,6 +73,9 @@ const toValues = (u: User): Values => ({
   email: u.email,
   phone: u.phone,
   photoUri: u.photoUri,
+  currentPassword: '',
+  newPassword: '',
+  repeatPassword: '',
 });
 
 export function EditarPerfil({ navigation }: Props) {
@@ -46,7 +86,7 @@ export function EditarPerfil({ navigation }: Props) {
 
 function EditarPerfilForm({ user, onSaved, onBack }: { user: User; onSaved: (u: User) => void; onBack: () => void }) {
   const form = useForm<Values>(toValues(user), RULES);
-  const { values: v, errors, setValue, validateField, register, focus } = form;
+  const { values: v, errors, setValue, setError, validateField, register, focus } = form;
   const [saving, setSaving] = useState(false);
   const [photoError, setPhotoError] = useState<string | null>(null);
   const [banner, setBanner] = useState<{ kind: 'success' | 'error'; message: string } | null>(null);
@@ -67,16 +107,32 @@ function EditarPerfilForm({ user, onSaved, onBack }: { user: User; onSaved: (u: 
     if (!form.validateAll()) return;
     setSaving(true);
     try {
-      const { user: updated, pendingEmail } = await profileService.update(user, v);
+      const changingPassword = wantsPasswordChange(v);
+      const { user: updated, pendingEmail } = await profileService.update(
+        user,
+        v,
+        changingPassword ? { current: v.currentPassword, next: v.newPassword } : undefined,
+      );
       onSaved(updated);
-      setBanner({
-        kind: 'success',
-        message: pendingEmail
-          ? `Cambios guardados. Te enviamos un correo a ${pendingEmail} para confirmar el cambio de correo.`
-          : 'Cambios guardados correctamente.',
-      });
+      setValue('currentPassword', '');
+      setValue('newPassword', '');
+      setValue('repeatPassword', '');
+      // Al limpiar uno por uno pueden quedar errores intermedios: revalidamos ya con los tres vacíos.
+      (['currentPassword', 'newPassword', 'repeatPassword'] as const).forEach(validateField);
+      const parts = ['Cambios guardados correctamente.'];
+      if (changingPassword) parts.push('Tu contraseña se actualizó.');
+      if (pendingEmail) parts.push(`Te enviamos un correo a ${pendingEmail} para confirmar el cambio de correo.`);
+      setBanner({ kind: 'success', message: parts.join(' ') });
       scrollRef.current?.scrollTo({ y: 0, animated: true });
     } catch (e) {
+      if (e instanceof ServiceError && e.code === WRONG_CURRENT_PASSWORD) {
+        setError('currentPassword', e.message);
+        return;
+      }
+      if (e instanceof ServiceError && e.code === 'auth/password-does-not-meet-requirements') {
+        setError('newPassword', e.message);
+        return;
+      }
       setBanner({
         kind: 'error',
         message: e instanceof ServiceError ? e.message : 'No pudimos guardar los cambios. Probá de nuevo.',
@@ -184,6 +240,52 @@ function EditarPerfilForm({ user, onSaved, onBack }: { user: User; onSaved: (u: 
         keyboardType="phone-pad"
         autoComplete="tel"
         textContentType="telephoneNumber"
+        returnKeyType="next"
+        submitBehavior="submit"
+        onSubmitEditing={() => focus('currentPassword')}
+      />
+      <View style={styles.section}>
+        <Text style={[type.heading, styles.sectionTitle]} accessibilityRole="header">
+          Cambiar contraseña
+        </Text>
+        <Text style={[type.small, styles.muted]}>Dejalo vacío si no querés cambiarla.</Text>
+      </View>
+      <PasswordField
+        ref={register('currentPassword')}
+        label="Contraseña actual"
+        value={v.currentPassword}
+        onChangeText={(t) => setValue('currentPassword', t)}
+        onBlur={() => validateField('currentPassword')}
+        error={errors.currentPassword}
+        autoComplete="current-password"
+        textContentType="password"
+        returnKeyType="next"
+        submitBehavior="submit"
+        onSubmitEditing={() => focus('newPassword')}
+      />
+      <PasswordField
+        ref={register('newPassword')}
+        label="Nueva contraseña"
+        value={v.newPassword}
+        onChangeText={(t) => setValue('newPassword', t)}
+        onBlur={() => validateField('newPassword')}
+        error={errors.newPassword}
+        hint={PASSWORD_HINT}
+        autoComplete="new-password"
+        textContentType="newPassword"
+        returnKeyType="next"
+        submitBehavior="submit"
+        onSubmitEditing={() => focus('repeatPassword')}
+      />
+      <PasswordField
+        ref={register('repeatPassword')}
+        label="Repetir nueva contraseña"
+        value={v.repeatPassword}
+        onChangeText={(t) => setValue('repeatPassword', t)}
+        onBlur={() => validateField('repeatPassword')}
+        error={errors.repeatPassword}
+        autoComplete="new-password"
+        textContentType="newPassword"
         returnKeyType="done"
         onSubmitEditing={() => void submit()}
       />
@@ -201,5 +303,7 @@ const styles = StyleSheet.create({
   linkText: { color: colors.link, fontFamily: fonts.bold },
   removeText: { color: colors.error, fontFamily: fonts.bold },
   muted: { color: colors.muted },
+  section: { gap: 2, marginTop: spacing.sm },
+  sectionTitle: { color: colors.navy },
   error: { color: colors.error },
 });

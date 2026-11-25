@@ -49,20 +49,62 @@ export const validatePhone: Validator = (raw) => {
   return undefined;
 };
 
-export type PasswordRules = { length: boolean; upper: boolean; number: boolean };
+export const PASSWORD_MIN = 8;
+export const PASSWORD_MAX = 64;
+export const PASSWORD_HINT = 'Entre 8 y 64 caracteres, con mayúscula, minúscula y número. Sin espacios.';
+
+/** Contraseñas muy usadas que no aceptamos aunque cumplan las reglas de formato. */
+const COMMON_PASSWORDS = new Set([
+  'password1',
+  'password123',
+  'contraseña1',
+  'contrasena1',
+  'qwerty123',
+  'abc12345',
+  'abcd1234',
+  'admin123',
+  'welcome1',
+  'bienvenido1',
+  'iloveyou1',
+  'alumat123',
+]);
+
+export type PasswordRules = { length: boolean; upper: boolean; lower: boolean; number: boolean };
 
 export function passwordRules(v: string): PasswordRules {
-  return { length: v.length >= 8, upper: /[A-ZÁÉÍÓÚÑ]/.test(v), number: /\d/.test(v) };
+  return {
+    length: v.length >= PASSWORD_MIN,
+    upper: /[A-ZÁÉÍÓÚÜÑ]/.test(v),
+    lower: /[a-záéíóúüñ]/.test(v),
+    number: /\d/.test(v),
+  };
 }
 
-export const validateNewPassword: Validator = (v) => {
+/** Datos personales que no deberían aparecer dentro de la contraseña. */
+export type PasswordContext = { email?: string; firstName?: string; lastName?: string };
+
+export function validateNewPassword(v: string, ctx: PasswordContext = {}): string | undefined {
   if (!v) return 'Ingresá una contraseña.';
+  if (/\s/.test(v)) return 'La contraseña no puede tener espacios.';
   const r = passwordRules(v);
-  if (!r.length) return 'Usá al menos 8 caracteres.';
+  if (!r.length) return `Usá al menos ${PASSWORD_MIN} caracteres.`;
+  if (v.length > PASSWORD_MAX) return `Usá como máximo ${PASSWORD_MAX} caracteres.`;
   if (!r.upper) return 'Incluí al menos una mayúscula.';
+  if (!r.lower) return 'Incluí al menos una minúscula.';
   if (!r.number) return 'Incluí al menos un número.';
+  if (/(.)\1\1\1/.test(v)) return 'No repitas el mismo carácter más de 3 veces seguidas.';
+  const lower = v.toLowerCase();
+  if (COMMON_PASSWORDS.has(lower)) {
+    return 'Esa contraseña es muy fácil de adivinar. Elegí otra.';
+  }
+  const personal = [ctx.email?.trim().split('@')[0], ctx.firstName?.trim(), ctx.lastName?.trim()]
+    .map((p) => p?.toLowerCase() ?? '')
+    .filter((p) => p.length >= 3);
+  if (personal.some((p) => lower.includes(p))) {
+    return 'No uses tu nombre ni tu correo en la contraseña.';
+  }
   return undefined;
-};
+}
 
 export function validatePasswordMatch(password: string, repeat: string): string | undefined {
   if (!repeat) return 'Repetí la contraseña.';

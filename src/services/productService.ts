@@ -1,10 +1,10 @@
 import {
   addDoc,
   collection,
-  deleteDoc,
   doc,
   getDoc,
   onSnapshot,
+  runTransaction,
   updateDoc,
   writeBatch,
   type DocumentData,
@@ -12,7 +12,7 @@ import {
 
 import { firestore } from './firebase';
 import { toServiceError } from './firebaseErrors';
-import { CATEGORIES, type Category, type Product, type ProductInput } from './types';
+import { CATEGORIES, ServiceError, type Category, type Product, type ProductInput } from './types';
 
 const products = collection(firestore, 'products');
 
@@ -40,6 +40,8 @@ function fromDoc(id: string, d: DocumentData): Product {
     imageUri: typeof d.imageUri === 'string' ? d.imageUri : null,
     imageName: typeof d.imageName === 'string' ? d.imageName : null,
     createdAt: typeof d.createdAt === 'string' ? d.createdAt : new Date(0).toISOString(),
+    // Los documentos anteriores al eliminado lógico no tienen el campo: se consideran activos.
+    deletedAt: typeof d.deletedAt === 'string' ? d.deletedAt : null,
   };
 }
 
@@ -60,7 +62,7 @@ export const productService = {
     const batch = writeBatch(firestore);
     const now = Date.now();
     SAMPLE.forEach((p, i) => {
-      batch.set(doc(products), { ...p, createdAt: new Date(now - (i + 1) * 86_400_000).toISOString() });
+      batch.set(doc(products), { ...p, createdAt: new Date(now - (i + 1) * 86_400_000).toISOString(), deletedAt: null });
     });
     batch.set(flag, { at: new Date(now).toISOString() });
     await batch.commit();
@@ -69,26 +71,55 @@ export const productService = {
   async create(input: ProductInput): Promise<Product> {
     try {
       const createdAt = new Date().toISOString();
-      const ref = await addDoc(products, { ...input, createdAt });
-      return { ...input, id: ref.id, createdAt };
+      const ref = await addDoc(products, { ...input, createdAt, deletedAt: null });
+      return { ...input, id: ref.id, createdAt, deletedAt: null };
     } catch (e) {
       throw toServiceError(e, 'No pudimos guardar el producto. Probá de nuevo.');
     }
   },
 
+  /**
+   * Actualiza un producto activo. Se verifica dentro de una transacción para no pisar
+   * un producto que otra persona eliminó (o recuperó) mientras se editaba.
+   */
   async update(id: string, input: ProductInput): Promise<void> {
     try {
-      await updateDoc(doc(products, id), { ...input });
+      await runTransaction(firestore, async (tx) => {
+        const ref = doc(products, id);
+        const snap = await tx.get(ref);
+        if (!snap.exists() || typeof snap.data().deletedAt === 'string') {
+          throw new ServiceError(
+            'product_unavailable',
+            'Este producto fue eliminado. Recuperalo desde Eliminados para volver a modificarlo.',
+          );
+        }
+        tx.update(ref, { ...input });
+      });
     } catch (e) {
       throw toServiceError(e, 'No pudimos guardar el producto. Probá de nuevo.');
     }
   },
 
-  async remove(id: string): Promise<void> {
+  /**
+   * Eliminado lógico: el documento no se borra de Firestore, solo se marca con `deletedAt`.
+   * Devuelve la fecha de eliminación para actualizar el estado local.
+   */
+  async remove(id: string): Promise<string> {
     try {
-      await deleteDoc(doc(products, id));
+      const deletedAt = new Date().toISOString();
+      await updateDoc(doc(products, id), { deletedAt });
+      return deletedAt;
     } catch (e) {
       throw toServiceError(e, 'No pudimos eliminar el producto. Probá de nuevo.');
+    }
+  },
+
+  /** Recupera un producto eliminado (vuelve a estar activo en el catálogo). */
+  async restore(id: string): Promise<void> {
+    try {
+      await updateDoc(doc(products, id), { deletedAt: null });
+    } catch (e) {
+      throw toServiceError(e, 'No pudimos recuperar el producto. Probá de nuevo.');
     }
   },
 };

@@ -8,8 +8,16 @@ export type AuthStackParamList = {
   Listo: undefined;
 };
 
+/** Aviso que el formulario de producto le deja al listado al volver. */
+export type ProductNotice = {
+  kind: 'created' | 'updated';
+  name: string;
+  /** Identificador único del aviso: evita mostrar dos veces el mismo mensaje. */
+  key: string;
+};
+
 export type ProductosStackParamList = {
-  Productos: undefined;
+  Productos: { notice?: ProductNotice } | undefined;
   ProductoForm: { id?: string } | undefined;
 };
 

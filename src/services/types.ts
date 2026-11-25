@@ -22,9 +22,11 @@ export type Product = {
   imageUri: string | null;
   imageName: string | null;
   createdAt: string; // ISO
+  /** Eliminado lógico: fecha (ISO) en que se eliminó, o null si está activo. */
+  deletedAt: string | null;
 };
 
-export type ProductInput = Omit<Product, 'id' | 'createdAt'>;
+export type ProductInput = Omit<Product, 'id' | 'createdAt' | 'deletedAt'>;
 
 export class ServiceError extends Error {
   constructor(
